@@ -57,17 +57,19 @@ function tween(ms,fn){return new Promise(res=>{const st=performance.now();functi
 function ui(){const c=cfg();$("level").textContent=level;$("score").textContent=score.toLocaleString();$("goal").textContent=Math.max(0,remaining);$("goalName").textContent=c.kind==="combo"?"Combos To Go":c.kind==="star"?"Stars To Go":c.kind==="pearl"?"Pearls To Go":"Pearl Match";$("levelText").textContent=c.text;$("introTitle").textContent=`LEVEL ${level}`}
 function decrementBombs(){let dead=false;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=board[r][c];if(t&&t.bomb!=null){t.bomb--;if(t.bomb<=0)dead=true}}if(dead){gameOver=true;$("overLayer").classList.remove("hidden")}}
 async function rotate(dir){if(!selected||busy||gameOver)return;history.push({b:cloneBoard(),score,remaining});if(history.length>12)history.shift();busy=true;decrementBombs();if(gameOver){busy=false;return}const tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v)),cx=pts.reduce((s,p)=>s+p.x,0)/3,cy=pts.reduce((s,p)=>s+p.y,0)/3,target=dir>0?[2,0,1]:[1,2,0];tri.forEach(([r,c])=>board[r][c]=null);anim=vals.map((t,i)=>({t,x:pts[i].x,y:pts[i].y}));beep(dir>0?590:440);await tween(170,t=>{const a=(dir>0?1:-1)*Math.PI*2/3*t;anim.forEach((p,i)=>{const ox=pts[i].x-cx,oy=pts[i].y-cy;p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a)})});tri.forEach(([r,c],i)=>board[r][c]=vals[target[i]]);anim=[];draw();await resolveBoard();busy=false}
-async function resolveBoard(){
+async function resolveBoard(rotatedKeys=new Set()){
  cascadeGuard=0;
  let firstWave=true;
 
- // Resolve real cascades. Existing gems are never recolored.
- // A high safety limit only prevents an accidental infinite loop.
- while(cascadeGuard<30){
+ // Original-style behavior: keep resolving until the board is stable.
+ // Safety limit only protects against an accidental infinite loop.
+ while(cascadeGuard<40){
   cascadeGuard++;
 
   const pearlFlower=findFlower("star");
   if(pearlFlower){
+   const flowerKeys=new Set(pearlFlower.ring.map(v=>v.join(",")));
+   if(firstWave && rotatedKeys.size && !touchesRotatedArea(flowerKeys,rotatedKeys))break;
    await createSpecial(pearlFlower,2500);
    if(cfg().kind==="pearl"&&firstWave)remaining--;
    firstWave=false;
@@ -76,6 +78,8 @@ async function resolveBoard(){
 
   const normalFlower=findFlower("normal");
   if(normalFlower){
+   const flowerKeys=new Set(normalFlower.ring.map(v=>v.join(",")));
+   if(firstWave && rotatedKeys.size && !touchesRotatedArea(flowerKeys,rotatedKeys))break;
    await createSpecial(normalFlower,1000);
    if(cfg().kind==="star"&&firstWave)remaining--;
    firstWave=false;
@@ -85,17 +89,24 @@ async function resolveBoard(){
   const gs=clusters();
   if(!gs.length)break;
 
+  // First wave must be caused by the current rotation.
+  const activeGroups=firstWave && rotatedKeys.size
+   ? gs.filter(g=>touchesRotatedArea(new Set(g.cells.map(v=>v.join(","))),rotatedKeys))
+   : gs;
+
+  if(!activeGroups.length)break;
+
   const remove=new Set();
   let comboCount=0,pearlMatch=false;
-  for(const g of gs){
+  for(const g of activeGroups){
    g.cells.forEach(v=>remove.add(v.join(",")));
    comboCount++;
    if(g.type==="pearl")pearlMatch=true;
   }
 
-  score+=remove.size*100*Math.max(1,comboCount)*(firstWave?1:Math.min(5,cascadeGuard));
+  score+=remove.size*100*Math.max(1,comboCount)*(firstWave?1:Math.min(6,cascadeGuard));
 
-  // Only the first wave caused by the player's move advances combo-type goals.
+  // Only the player's first wave advances normal combo goals.
   if(firstWave&&cfg().kind==="combo")remaining-=1;
   if(firstWave&&cfg().kind==="pearlmatch"&&pearlMatch)remaining=0;
 
@@ -104,6 +115,7 @@ async function resolveBoard(){
   firstWave=false;
  }
 
+ // At this point the board should be stable.
  ui();
  if(remaining<=0)await complete();
 }
@@ -126,17 +138,35 @@ function maybeSpawnBomb(){
  showToast("BOMB!",550);
 }
 function safeSpawnTile(r,c){
- const allowCascade=Math.random()<cfg().cascadeChance;
+ // New top gems are random, but we strongly prefer colors that do not
+ // immediately create a match. This keeps long cascades rare, not impossible.
  const safeColors=[];
+ const neutralColors=[];
+
  for(let color=0;color<cfg().colors;color++){
   board[r][c]=tile("normal",color,null);
-  if(localClusterSize(r,c)<3&&!findFlower("normal"))safeColors.push(color);
+  const groupSize=localClusterSize(r,c);
+  const makesFlower=!!findFlower("normal");
+
+  if(groupSize<3&&!makesFlower){
+   safeColors.push(color);
+  }else if(groupSize===3&&!makesFlower){
+   neutralColors.push(color);
+  }
  }
+
  board[r][c]=null;
 
- if(!allowCascade&&safeColors.length){
+ // About 6% chance to allow a natural cascade when a plausible color exists.
+ if(Math.random()<0.06 && neutralColors.length){
+  return tile("normal",neutralColors[Math.floor(Math.random()*neutralColors.length)],null);
+ }
+
+ if(safeColors.length){
   return tile("normal",safeColors[Math.floor(Math.random()*safeColors.length)],null);
  }
+
+ // Fallback when no safe color exists.
  return tile("normal",rnd(),null);
 }
 async function gravity(){
@@ -212,7 +242,45 @@ async function gravity(){
 function showToast(text,ms=900){$("toast").textContent=text;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),ms)}
 async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;try{localStorage.setItem("hexic_v6_level",String(level))}catch(e){}levelStartScore=score;startLevel(true)}else{showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
 function hasImmediate(){return clusters().length||findFlower("normal")||findFlower("star")}
-function generateBoard(){for(let attempt=0;attempt<80;attempt++){board=Array.from({length:ROWS},()=>Array.from({length:COLS},()=>tile()));let loops=0;while(hasImmediate()&&loops++<300){const gs=clusters();for(const g of gs)for(const[r,c]of g.cells)board[r][c]=tile();const f=findFlower("normal");if(f)for(const[r,c]of f.ring)board[r][c]=tile()}if(!hasImmediate())return}board=Array.from({length:ROWS},()=>Array.from({length:COLS},(_,c)=>tile("normal",(c+Math.floor(Math.random()*3))%cfg().colors,null)))}
+function stabilizeInitialBoard(){
+ for(let pass=0;pass<200;pass++){
+  const gs=clusters();
+  const nf=findFlower("normal");
+  const sf=findFlower("star");
+
+  if(!gs.length&&!nf&&!sf)return;
+
+  const bad=new Set();
+  for(const g of gs){
+   if(g.type==="normal")g.cells.forEach(v=>bad.add(v.join(",")));
+  }
+  if(nf)nf.ring.forEach(v=>bad.add(v.join(",")));
+  if(sf)sf.ring.forEach(v=>bad.add(v.join(",")));
+
+  if(!bad.size)return;
+
+  for(const key of bad){
+   const [r,c]=key.split(",").map(Number);
+   if(!board[r][c]||board[r][c].type!=="normal")continue;
+
+   let placed=false;
+   for(let tries=0;tries<30;tries++){
+    board[r][c]=tile("normal",rnd(),null);
+    if(localClusterSize(r,c)<3&&!findFlower("normal")){
+     placed=true;
+     break;
+    }
+   }
+   if(!placed){
+    board[r][c]=tile("normal",rnd(),null);
+   }
+  }
+ }
+}
+
+function generateBoard(){for(let attempt=0;attempt<80;attempt++){board=Array.from({length:ROWS},()=>Array.from({length:COLS},()=>tile()));let loops=0;while(hasImmediate()&&loops++<300){const gs=clusters();for(const g of gs)for(const[r,c]of g.cells)board[r][c]=tile();const f=findFlower("normal");if(f)for(const[r,c]of f.ring)board[r][c]=tile()}if(!hasImmediate())return}board=Array.from({length:ROWS},()=>Array.from({length:COLS},(_,c)=>tile("normal",(c+Math.floor(Math.random()*3))%cfg().colors,null)))
+ stabilizeInitialBoard();
+}
 function startLevel(showIntro=true){
  remaining=cfg().target;selected=null;busy=false;gameOver=false;history=[];anim=[];vanish.clear();
  $("overLayer").classList.add("hidden");
