@@ -61,7 +61,9 @@ async function resolveBoard(){
  cascadeGuard=0;
  let firstWave=true;
 
- while(cascadeGuard<(1+cfg().maxCascade)){
+ // Resolve real cascades. Existing gems are never recolored.
+ // A high safety limit only prevents an accidental infinite loop.
+ while(cascadeGuard<30){
   cascadeGuard++;
 
   const pearlFlower=findFlower("star");
@@ -93,17 +95,13 @@ async function resolveBoard(){
 
   score+=remove.size*100*Math.max(1,comboCount)*(firstWave?1:Math.min(5,cascadeGuard));
 
+  // Only the first wave caused by the player's move advances combo-type goals.
   if(firstWave&&cfg().kind==="combo")remaining-=1;
   if(firstWave&&cfg().kind==="pearlmatch"&&pearlMatch)remaining=0;
 
   await removeAndDrop(remove);
   maybeSpawnBomb();
   firstWave=false;
- }
-
- if(hasImmediate()){
-  stabilizeBoard();
-  draw();
  }
 
  ui();
@@ -214,28 +212,6 @@ async function gravity(){
 function showToast(text,ms=900){$("toast").textContent=text;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),ms)}
 async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;try{localStorage.setItem("hexic_v6_level",String(level))}catch(e){}levelStartScore=score;startLevel(true)}else{showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
 function hasImmediate(){return clusters().length||findFlower("normal")||findFlower("star")}
-function stabilizeBoard(){
- for(let pass=0;pass<100;pass++){
-  const gs=clusters();
-  const nf=findFlower("normal");
-  if(!gs.length&&!nf)return;
-
-  const cells=new Set();
-  for(const g of gs){
-   if(g.type==="normal")g.cells.forEach(v=>cells.add(v.join(",")));
-  }
-  if(nf)nf.ring.forEach(v=>cells.add(v.join(",")));
-
-  for(const key of cells){
-   const [r,c]=key.split(",").map(Number);
-   if(board[r][c]?.type!=="normal")continue;
-   for(let tries=0;tries<20;tries++){
-    board[r][c]=tile("normal",rnd(),null);
-    if(localClusterSize(r,c)<3&&!findFlower("normal"))break;
-   }
-  }
- }
-}
 function generateBoard(){for(let attempt=0;attempt<80;attempt++){board=Array.from({length:ROWS},()=>Array.from({length:COLS},()=>tile()));let loops=0;while(hasImmediate()&&loops++<300){const gs=clusters();for(const g of gs)for(const[r,c]of g.cells)board[r][c]=tile();const f=findFlower("normal");if(f)for(const[r,c]of f.ring)board[r][c]=tile()}if(!hasImmediate())return}board=Array.from({length:ROWS},()=>Array.from({length:COLS},(_,c)=>tile("normal",(c+Math.floor(Math.random()*3))%cfg().colors,null)))}
 function startLevel(showIntro=true){
  remaining=cfg().target;selected=null;busy=false;gameOver=false;history=[];anim=[];vanish.clear();
