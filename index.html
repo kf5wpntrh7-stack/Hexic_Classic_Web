@@ -39,14 +39,17 @@ background:linear-gradient(#ffffff,#a9dafa 20%,#3f94d1 50%,#1763a8 51%,#4da5dd);
       <div class="scorebox">SCORE <b id="score">0</b></div>
     </div>
     <div class="boardwrap"><canvas id="c" width="700" height="700"></canvas></div>
-    <div class="panel">點一下三顆寶石的交界處即可順時針旋轉<br><span id="combo">COMBO 0</span></div>
+    <div class="panel">點一下三顆寶石的交界處即可旋轉<br><span id="combo">COMBO 0</span></div>
+    <div class="smallrow">
+      <button class="btn" id="direction">目前：左旋轉 ↶</button>
+    </div>
     <div class="smallrow">
       <button class="btn" id="new">NEW GAME</button>
       <button class="btn" id="shuffle">SHUFFLE</button>
       <button class="btn" id="sound">SOUND ON</button>
     </div>
   </div>
-  <div class="note">左鍵／手指：順時針　右鍵：逆時針</div>
+  <div class="note">預設左旋轉；按下方按鈕可切換成右旋轉</div>
 </div>
 <script>
 (()=>{
@@ -55,7 +58,7 @@ const cv=document.getElementById("c"),ctx=cv.getContext("2d");
 const scoreEl=document.getElementById("score"),comboEl=document.getElementById("combo");
 const ROWS=9,COLS=9;
 const COLORS=["#1d57e6","#18d940","#f14b4f","#f6aa24","#9a43c9","#54c6ef","#087c26"];
-let board=[], selected=null, score=0, combo=0, busy=false, soundOn=true;
+let board=[], selected=null, score=0, combo=0, busy=false, soundOn=true, currentDir=-1;
 let animPieces=[], vanishing=new Set();
 const AC=window.AudioContext||window.webkitAudioContext; let ac=null;
 
@@ -267,13 +270,19 @@ function init(){
 cv.addEventListener("pointerdown",e=>{
   if(busy)return;e.preventDefault();
   const b=cv.getBoundingClientRect(),mx=(e.clientX-b.left)*700/b.width,my=(e.clientY-b.top)*700/b.height;
-  selected=pick(mx,my);draw();if(selected)rotate(1);
+  selected=pick(mx,my);draw();if(selected)rotate(currentDir);
 });
 cv.addEventListener("contextmenu",e=>{
   e.preventDefault();if(busy)return;
   const b=cv.getBoundingClientRect(),mx=(e.clientX-b.left)*700/b.width,my=(e.clientY-b.top)*700/b.height;
-  selected=pick(mx,my);draw();if(selected)rotate(-1);
+  selected=pick(mx,my);draw();if(selected)rotate(-currentDir);
 });
+document.getElementById("direction").onclick=e=>{
+  if(busy)return;
+  currentDir=currentDir===-1?1:-1;
+  e.target.textContent=currentDir===-1?"目前：左旋轉 ↶":"目前：右旋轉 ↷";
+  beep(currentDir===-1?430:570);
+};
 document.getElementById("new").onclick=()=>{if(confirm("開始新遊戲？"))init()};
 document.getElementById("shuffle").onclick=()=>{
   if(busy)return;
