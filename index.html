@@ -5,29 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Hexic Classic Web</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#050713;color:#fff}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#84cdf5;color:#fff}
 body{display:flex;justify-content:center;align-items:flex-start;padding:10px;background:
-radial-gradient(circle at 50% 12%,#273372 0,#11183c 25%,#070a1a 58%,#03040b 100%)}
+linear-gradient(180deg,#9be0ff 0%,#72c4f1 48%,#4ca8e4 100%)}
 .game{width:min(100%,570px)}
 .chrome{border-radius:28px;padding:10px;background:
-linear-gradient(#7c83b8 0,#272d64 7%,#0a1032 18%,#070a20 82%,#2d3263 94%,#9ba0c9 100%);
-box-shadow:0 0 0 2px #060715,0 0 0 4px #5d6295,0 18px 50px #000b}
+linear-gradient(#f8fbff 0,#9ec9ef 8%,#2f7ac0 18%,#125395 82%,#8fc5ee 94%,#f7fbff 100%);
+box-shadow:0 0 0 2px #174f87,0 0 0 4px #d4edff,0 18px 42px #195c8e88}
 .titlebar{height:53px;border-radius:19px 19px 8px 8px;background:
-linear-gradient(180deg,#393d75,#15194a 55%,#080d33 56%,#20285c);
-border:1px solid #8d92c6;box-shadow:inset 0 1px #ffffff7a,inset 0 -2px #0008;
+linear-gradient(180deg,#ffffff,#a9d7f7 14%,#2376bd 49%,#092f77 50%,#164997 82%,#89c8ef);
+border:1px solid #d8f1ff;box-shadow:inset 0 1px #ffffff,inset 0 -2px #063369;
 display:flex;align-items:center;justify-content:space-between;padding:0 18px}
-.logo{font-size:22px;font-weight:bold;font-style:italic;letter-spacing:-1px;text-shadow:0 2px 0 #000,0 0 8px #89aaff}
-.scorebox{font-size:12px;color:#bac8ff;text-align:right}.scorebox b{display:block;font-size:23px;color:#fff;line-height:21px}
+.logo{font-size:22px;font-weight:bold;font-style:italic;letter-spacing:-1px;text-shadow:0 2px 0 #082b62,0 0 8px #d9f3ff}
+.scorebox{font-size:12px;color:#d7efff;text-align:right}.scorebox b{display:block;font-size:23px;color:#fff;line-height:21px}
 .boardwrap{margin-top:7px;border:2px solid #343b75;border-radius:10px;background:
-radial-gradient(circle at 50% 35%,#20245d 0,#10143b 42%,#070a21 100%);
-box-shadow:inset 0 0 35px #000c;overflow:hidden}
+radial-gradient(circle at 50% 38%,#d4f3ff 0,#9bdafa 48%,#64b9eb 100%);
+box-shadow:inset 0 0 28px #2e80b766;overflow:hidden}
 canvas{display:block;width:100%;height:auto;aspect-ratio:1/1;touch-action:none}
-.panel{margin-top:8px;text-align:center;color:#aeb8ea;font-size:12px;line-height:1.6}
+.panel{margin-top:8px;text-align:center;color:#eaf7ff;font-size:12px;line-height:1.6}
 .smallrow{display:flex;gap:7px;margin-top:7px}
 .btn{flex:1;min-height:39px;border-radius:13px;border:1px solid #8c92c5;color:#fff;font-weight:bold;font-size:12px;
-background:linear-gradient(#424a89,#20265d 50%,#11163d 51%,#292f6d);box-shadow:inset 0 1px #ffffff75,0 2px 0 #0009;cursor:pointer}
+background:linear-gradient(#ffffff,#a9dafa 20%,#3f94d1 50%,#1763a8 51%,#4da5dd);box-shadow:inset 0 1px #ffffff,0 2px 0 #165a91;cursor:pointer}
 .btn:active{transform:translateY(1px);filter:brightness(.85)}
-.note{text-align:center;color:#8e97ca;font-size:11px;line-height:1.5;margin:10px}
+.note{text-align:center;color:#0f4d87;font-size:11px;line-height:1.5;margin:10px}
 @media(max-width:480px){body{padding:5px}.chrome{padding:7px;border-radius:20px}.titlebar{height:47px}.logo{font-size:19px}}
 </style>
 </head>
@@ -54,7 +54,7 @@ background:linear-gradient(#424a89,#20265d 50%,#11163d 51%,#292f6d);box-shadow:i
 const cv=document.getElementById("c"),ctx=cv.getContext("2d");
 const scoreEl=document.getElementById("score"),comboEl=document.getElementById("combo");
 const ROWS=9,COLS=9;
-const COLORS=["#28b8ff","#ffd23d","#ef4747","#76d32f","#8b49e5","#ff842f"];
+const COLORS=["#1d57e6","#18d940","#f14b4f","#f6aa24","#9a43c9","#54c6ef","#087c26"];
 let board=[], selected=null, score=0, combo=0, busy=false, soundOn=true;
 let animPieces=[], vanishing=new Set();
 const AC=window.AudioContext||window.webkitAudioContext; let ac=null;
@@ -94,16 +94,16 @@ function drawGemAt(x,y,color,alpha=1,scale=1){
   const gr=ctx.createLinearGradient(x-g.s,y-g.s,x+g.s,y+g.s);
   gr.addColorStop(0,shade(col,75));gr.addColorStop(.28,shade(col,25));gr.addColorStop(.62,col);gr.addColorStop(1,shade(col,-70));
   hexPath(x,y,g.s,.88);ctx.fillStyle=gr;ctx.fill();
-  ctx.shadowColor="transparent";ctx.lineWidth=2;ctx.strokeStyle="#fff8";ctx.stroke();
-  hexPath(x,y,g.s,.68);ctx.lineWidth=4;ctx.strokeStyle="#0005";ctx.stroke();
+  ctx.shadowColor="transparent";ctx.lineWidth=2;ctx.strokeStyle="#f8fdff";ctx.stroke();
+  hexPath(x,y,g.s,.68);ctx.lineWidth=4;ctx.strokeStyle="#1b4688aa";ctx.stroke();
   ctx.beginPath();ctx.moveTo(x-g.s*.38,y-g.s*.18);ctx.lineTo(x-g.s*.05,y-g.s*.46);ctx.lineTo(x+g.s*.28,y-g.s*.31);
-  ctx.strokeStyle="#fff8";ctx.lineWidth=5;ctx.lineCap="round";ctx.stroke();
+  ctx.strokeStyle="#f8fdff";ctx.lineWidth=5;ctx.lineCap="round";ctx.stroke();
   ctx.restore();
 }
 function draw(){
   ctx.clearRect(0,0,700,700);
   const bg=ctx.createRadialGradient(350,270,20,350,350,430);
-  bg.addColorStop(0,"#252a68");bg.addColorStop(1,"#07091f");
+  bg.addColorStop(0,"#d7f5ff");bg.addColorStop(.55,"#9adbf8");bg.addColorStop(1,"#68b9e8");
   ctx.fillStyle=bg;ctx.fillRect(0,0,700,700);
 
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
