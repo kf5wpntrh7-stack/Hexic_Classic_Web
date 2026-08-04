@@ -15,7 +15,7 @@ body{display:flex;justify-content:center;align-items:flex-start;padding:clamp(4p
 canvas{position:relative;display:block;width:100%;height:auto;aspect-ratio:1/1;touch-action:none;user-select:none}.bottom{min-height:112px;display:grid;grid-template-columns:minmax(106px,132px) 64px minmax(120px,1fr);align-items:center;gap:10px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(#abdcef,#70b5df 60%,#4d99ce);border-radius:0 0 13px 13px;border-top:1px solid #e7f8ff;overflow:visible}
 .rotwrap{text-align:center;align-self:center;min-width:0}.rotate{width:96px;height:96px;margin:0 auto;border-radius:50%;border:7px solid #e3f5ff;background:radial-gradient(circle at 42% 34%,#6e95e4,#315cc2 48%,#173d9d 76%,#0b2a80);box-shadow:0 0 0 3px #4e89c1,0 5px 10px #2b6c9d88,inset 0 3px #fff9;color:#ffed4d;font-size:61px;line-height:76px;font-weight:bold;cursor:pointer;text-shadow:0 3px #263875;transition:transform .15s}.rotate.right{transform:scaleX(-1)}.rotlabel{margin-top:2px;color:#263f8d;font-size:13px;font-weight:bold;text-shadow:0 1px #fff}
 .undo{width:58px;height:58px;border-radius:50%;border:5px solid #e0f3ff;background:linear-gradient(#4b79d2,#204ba8);color:#fff;font-size:33px;box-shadow:0 0 0 2px #3c79b6,inset 0 2px #fff8;cursor:pointer}.menu{width:100%;height:50px;border-radius:34px 34px 5px 5px;border:2px solid #80bae1;background:linear-gradient(#f5fdff,#a8dcf6 36%,#4da2dc 37%,#2d7dc3);color:#263b8e;font-weight:bold;font-size:21px;box-shadow:inset 0 2px #fff,0 2px #246da8;cursor:pointer}
-.overlay{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:18px;background:#2a6097b8;backdrop-filter:blur(3px)}.hidden{display:none!important}.panel{width:min(92%,410px);padding:21px;border-radius:22px;text-align:center;color:#24458d;background:linear-gradient(#fff,#d2efff);border:4px solid #fff;box-shadow:0 0 0 3px #4f94c8,0 16px 46px #174c7b88}.panel h2{margin:0 0 8px}.panel p{color:#45679d;line-height:1.55}.panel button{width:100%;padding:11px;margin-top:8px;border-radius:13px;border:2px solid #8cbfe0;background:linear-gradient(#fff,#acdff6 48%,#519fd5 49%,#307fc1);color:#203d88;font-weight:bold;font-size:15px}.toast{position:absolute;z-index:6;left:50%;top:45%;transform:translate(-50%,-50%);padding:13px 22px;border-radius:20px;background:#fff;color:#294b99;font-size:22px;font-weight:bold;box-shadow:0 8px 24px #346b9c66;text-align:center}.legend{font-size:12px;color:#3c629a;text-align:left;background:#eff9ff;border-radius:12px;padding:10px;margin-top:10px}
+.overlay{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:18px;background:#2a6097b8;backdrop-filter:blur(3px)}.hidden{display:none!important}.panel{width:min(92%,410px);padding:21px;border-radius:22px;text-align:center;color:#24458d;background:linear-gradient(#fff,#d2efff);border:4px solid #fff;box-shadow:0 0 0 3px #4f94c8,0 16px 46px #174c7b88}.panel h2{margin:0 0 8px}.panel p{color:#45679d;line-height:1.55;font-size:18px}.panel button{touch-action:manipulation}.panel button{width:100%;padding:11px;margin-top:8px;border-radius:13px;border:2px solid #8cbfe0;background:linear-gradient(#fff,#acdff6 48%,#519fd5 49%,#307fc1);color:#203d88;font-weight:bold;font-size:15px}.toast{position:absolute;z-index:6;left:50%;top:45%;transform:translate(-50%,-50%);padding:13px 22px;border-radius:20px;background:#fff;color:#294b99;font-size:22px;font-weight:bold;box-shadow:0 8px 24px #346b9c66;text-align:center}.legend{font-size:12px;color:#3c629a;text-align:left;background:#eff9ff;border-radius:12px;padding:10px;margin-top:10px}
 @media(max-width:520px){
  body{padding:3px;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
  .app{width:100%}.frame{padding:4px;border-radius:15px}
@@ -38,8 +38,20 @@ canvas{position:relative;display:block;width:100%;height:auto;aspect-ratio:1/1;t
 <header class="top"><div class="stat"><span>Level</span><b id="level">1</b></div><div class="stat"><span>Score</span><b id="score">0</b></div><div class="stat"><span id="goalName">Combos To Go</span><b id="goal">8</b></div></header>
 <section class="field">
 <canvas id="game" width="720" height="720"></canvas><div id="toast" class="toast hidden"></div>
-<div id="menuLayer" class="overlay hidden"><div class="panel"><h2>HEXIC</h2><p id="levelText"></p><div class="legend">普通寶石：3 顆以上同色相連即消除<br>Starflower：6 顆同色圍住中央<br>Black Pearl：6 顆 Starflower 圍住中央<br>炸彈：每旋轉一次倒數 1，歸零即失敗</div><button id="continueBtn">繼續遊戲</button><button id="restartBtn">重新開始本關</button><button id="soundBtn">音效：開啟</button></div></div>
-<div id="overLayer" class="overlay hidden"><div class="panel"><h2>GAME OVER</h2><p>炸彈倒數歸零。</p><button id="retryBtn">重新挑戰</button></div></div>
+<div id="introLayer" class="overlay hidden"><div class="panel">
+  <h2 id="introTitle">LEVEL 1</h2>
+  <p id="levelText"></p>
+  <button id="startBtn">開始本關</button>
+</div></div>
+<div id="menuLayer" class="overlay hidden"><div class="panel">
+  <h2>暫停</h2>
+  <button id="continueBtn">繼續遊戲</button>
+  <button id="restartBtn">重新開始本關</button>
+  <button id="soundBtn">音效：開啟</button>
+</div></div>
+<div id="overLayer" class="overlay hidden"><div class="panel">
+  <h2>GAME OVER</h2><p>炸彈倒數歸零。</p><button id="retryBtn">重新挑戰本關</button>
+</div></div>
 </section>
 <footer class="bottom"><div class="rotwrap"><button id="rotateBtn" class="rotate">↻</button><div id="rotLabel" class="rotlabel">左旋轉</div></div><button id="undoBtn" class="undo">↶</button><button id="menuBtn" class="menu">MENU</button></footer>
 </div></div>
@@ -59,7 +71,7 @@ const LEVELS=[
  {kind:"combo",target:30,colors:7,bombs:true,text:"完成 30 次消除。"},
  {kind:"pearlmatch",target:1,colors:6,bombs:true,text:"最終目標：讓 3 顆 Black Pearl 相連並消除。"}
 ];
-let board=[],selected=null,busy=false,currentDir=-1,soundOn=true,level=1,score=0,remaining=8,history=[],anim=[],vanish=new Set(),gameOver=false,cascadeGuard=0;
+let board=[],selected=null,busy=false,currentDir=-1,soundOn=true,level=1,score=0,levelStartScore=0,remaining=8,history=[],anim=[],vanish=new Set(),gameOver=false,cascadeGuard=0;
 const $=id=>document.getElementById(id),AC=window.AudioContext||window.webkitAudioContext;let ac;
 function beep(f=520,d=.06){if(!soundOn)return;try{ac=ac||new AC();if(ac.state==="suspended")ac.resume();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.03;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d)}catch(e){}}
 function cfg(){return LEVELS[level-1]}function rnd(){return Math.floor(Math.random()*cfg().colors)}
@@ -80,7 +92,7 @@ function order(t){const ps=t.map(v=>({v,...center(...v)})),cx=ps.reduce((s,p)=>s
 function clusters(){const groups=[],seen=new Set();for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=board[r][c],key=`${r},${c}`;if(!t||seen.has(key))continue;const type=t.type,color=t.color,q=[[r,c]],g=[];seen.add(key);while(q.length){const [rr,cc]=q.shift(),cur=board[rr][cc];g.push([rr,cc]);for(const [nr,nc] of neigh(rr,cc)){if(!valid(nr,nc))continue;const nt=board[nr][nc],nk=`${nr},${nc}`;if(!nt||seen.has(nk))continue;const same=type==="normal"?nt.type==="normal"&&nt.color===color:nt.type===type;if(same){seen.add(nk);q.push([nr,nc])}}}if(g.length>=3)groups.push({type,color,cells:g})}return groups}
 function findFlower(type){for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const centerTile=board[r][c],ring=neigh(r,c);if(!centerTile||!ring.every(v=>valid(...v)))continue;const ts=ring.map(([rr,cc])=>board[rr][cc]);if(type==="normal"&&ts.every(Boolean)&&ts.every(t=>t.type==="normal"&&t.color===ts[0].color))return{r,c,ring,newType:"star",color:centerTile.color};if(type==="star"&&ts.every(Boolean)&&ts.every(t=>t.type==="star"))return{r,c,ring,newType:"pearl",color:0}}return null}
 function tween(ms,fn){return new Promise(res=>{const st=performance.now();function f(now){const t=Math.min(1,(now-st)/ms);fn(1-Math.pow(1-t,3));draw();t<1?requestAnimationFrame(f):res()}requestAnimationFrame(f)})}
-function ui(){const c=cfg();$("level").textContent=level;$("score").textContent=score.toLocaleString();$("goal").textContent=Math.max(0,remaining);$("goalName").textContent=c.kind==="combo"?"Combos To Go":c.kind==="star"?"Stars To Go":c.kind==="pearl"?"Pearls To Go":"Pearl Match";$("levelText").textContent=c.text}
+function ui(){const c=cfg();$("level").textContent=level;$("score").textContent=score.toLocaleString();$("goal").textContent=Math.max(0,remaining);$("goalName").textContent=c.kind==="combo"?"Combos To Go":c.kind==="star"?"Stars To Go":c.kind==="pearl"?"Pearls To Go":"Pearl Match";$("levelText").textContent=c.text;$("introTitle").textContent=`LEVEL ${level}`}
 function decrementBombs(){let dead=false;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=board[r][c];if(t&&t.bomb!=null){t.bomb--;if(t.bomb<=0)dead=true}}if(dead){gameOver=true;$("overLayer").classList.remove("hidden")}}
 async function rotate(dir){if(!selected||busy||gameOver)return;history.push({b:cloneBoard(),score,remaining});if(history.length>12)history.shift();busy=true;decrementBombs();if(gameOver){busy=false;return}const tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v)),cx=pts.reduce((s,p)=>s+p.x,0)/3,cy=pts.reduce((s,p)=>s+p.y,0)/3,target=dir>0?[2,0,1]:[1,2,0];tri.forEach(([r,c])=>board[r][c]=null);anim=vals.map((t,i)=>({t,x:pts[i].x,y:pts[i].y}));beep(dir>0?590:440);await tween(170,t=>{const a=(dir>0?1:-1)*Math.PI*2/3*t;anim.forEach((p,i)=>{const ox=pts[i].x-cx,oy=pts[i].y-cy;p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a)})});tri.forEach(([r,c],i)=>board[r][c]=vals[target[i]]);anim=[];draw();await resolveBoard();busy=false}
 async function resolveBoard(){cascadeGuard=0;while(cascadeGuard++<24){const pearlFlower=findFlower("star");if(pearlFlower){await createSpecial(pearlFlower,2500);if(cfg().kind==="pearl")remaining--;continue}const normalFlower=findFlower("normal");if(normalFlower){await createSpecial(normalFlower,1000);if(cfg().kind==="star")remaining--;continue}const gs=clusters();if(!gs.length)break;const remove=new Set();let comboCount=0,pearlMatch=false;for(const g of gs){g.cells.forEach(v=>remove.add(v.join(",")));comboCount++;if(g.type==="pearl")pearlMatch=true}score+=remove.size*100*Math.max(1,comboCount);if(cfg().kind==="combo")remaining-=comboCount;if(cfg().kind==="pearlmatch"&&pearlMatch)remaining=0;await removeAndDrop(remove);maybeSpawnBomb()}ui();if(remaining<=0)await complete()}
@@ -89,14 +101,42 @@ async function removeAndDrop(set){vanish=new Set(set);anim=[...set].map(k=>{cons
 function maybeSpawnBomb(){if(!cfg().bombs)return;const chance=.18+Math.min(.18,(level-4)*.025);if(Math.random()>chance)return;const spots=[];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(board[r][c]&&board[r][c].type==="normal"&&board[r][c].bomb==null)spots.push([r,c]);if(!spots.length)return;const [r,c]=spots[Math.floor(Math.random()*spots.length)];board[r][c].bomb=Math.max(5,10-Math.floor(level/2));showToast("BOMB!",550)}
 async function gravity(){const moves=[];for(let c=0;c<COLS;c++){const survivors=[];for(let r=ROWS-1;r>=0;r--)if(board[r][c])survivors.push({t:board[r][c],from:r});for(let r=0;r<ROWS;r++)board[r][c]=null;let dest=ROWS-1;for(const s of survivors)moves.push({t:s.t,c,from:s.from,to:dest--});let spawn=1;while(dest>=0)moves.push({t:tile(),c,from:-spawn++,to:dest--})}anim=moves.map(m=>{const from=m.from<0?{x:center(0,m.c).x,y:center(0,m.c).y-geom().dy*Math.abs(m.from)}:center(m.from,m.c),to=center(m.to,m.c);return{...m,x:from.x,y:from.y,fromY:from.y,toX:to.x,toY:to.y}});await tween(300,t=>anim.forEach(p=>{p.x=p.toX;p.y=p.fromY+(p.toY-p.fromY)*t}));moves.forEach(m=>board[m.to][m.c]=m.t);anim=[];draw()}
 function showToast(text,ms=900){$("toast").textContent=text;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),ms)}
-async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;startLevel()}else{showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
+async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;levelStartScore=score;startLevel(true)}else{showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
 function hasImmediate(){return clusters().length||findFlower("normal")||findFlower("star")}
 function generateBoard(){for(let attempt=0;attempt<80;attempt++){board=Array.from({length:ROWS},()=>Array.from({length:COLS},()=>tile()));let loops=0;while(hasImmediate()&&loops++<300){const gs=clusters();for(const g of gs)for(const[r,c]of g.cells)board[r][c]=tile();const f=findFlower("normal");if(f)for(const[r,c]of f.ring)board[r][c]=tile()}if(!hasImmediate())return}board=Array.from({length:ROWS},()=>Array.from({length:COLS},(_,c)=>tile("normal",(c+Math.floor(Math.random()*3))%cfg().colors,null)))}
-function startLevel(){remaining=cfg().target;selected=null;busy=false;gameOver=false;history=[];anim=[];vanish.clear();$("overLayer").classList.add("hidden");generateBoard();ui();draw();$("menuLayer").classList.remove("hidden")}
-cv.addEventListener("pointerdown",e=>{if(busy||gameOver||!$("menuLayer").classList.contains("hidden"))return;e.preventDefault();const b=cv.getBoundingClientRect();selected=pick((e.clientX-b.left)*720/b.width,(e.clientY-b.top)*720/b.height);draw();if(selected)rotate(currentDir)});
+function startLevel(showIntro=true){
+ remaining=cfg().target;selected=null;busy=false;gameOver=false;history=[];anim=[];vanish.clear();
+ $("overLayer").classList.add("hidden");
+ $("menuLayer").classList.add("hidden");
+ $("introLayer").classList.add("hidden");
+ generateBoard();ui();draw();
+ if(showIntro)$("introLayer").classList.remove("hidden");
+}
+cv.addEventListener("pointerdown",e=>{if(busy||gameOver||!$("menuLayer").classList.contains("hidden")||!$("introLayer").classList.contains("hidden"))return;e.preventDefault();const b=cv.getBoundingClientRect();selected=pick((e.clientX-b.left)*720/b.width,(e.clientY-b.top)*720/b.height);draw();if(selected)rotate(currentDir)});
 $("rotateBtn").onclick=()=>{currentDir*=-1;$("rotateBtn").classList.toggle("right",currentDir===1);$("rotLabel").textContent=currentDir===-1?"左旋轉":"右旋轉";beep(currentDir===-1?440:590)};
 $("undoBtn").onclick=()=>{if(busy||!history.length)return;const h=history.pop();board=h.b;score=h.score;remaining=h.remaining;selected=null;gameOver=false;$("overLayer").classList.add("hidden");ui();draw();beep(360)};
-$("menuBtn").onclick=()=>$("menuLayer").classList.remove("hidden");$("continueBtn").onclick=()=>$("menuLayer").classList.add("hidden");$("restartBtn").onclick=()=>{score=level===1?0:score;startLevel()};$("soundBtn").onclick=e=>{soundOn=!soundOn;e.target.textContent=soundOn?"音效：開啟":"音效：關閉"};$("retryBtn").onclick=()=>startLevel();startLevel();
+$("menuBtn").onclick=()=>{
+ if(busy||gameOver)return;
+ $("menuLayer").classList.remove("hidden");
+};
+$("startBtn").onclick=()=>$("introLayer").classList.add("hidden");
+$("continueBtn").onclick=()=>$("menuLayer").classList.add("hidden");
+$("restartBtn").onclick=()=>{
+ score=levelStartScore;
+ $("menuLayer").classList.add("hidden");
+ startLevel(false);
+ showToast("本關已重新開始",700);
+};
+$("soundBtn").onclick=e=>{
+ soundOn=!soundOn;
+ e.target.textContent=soundOn?"音效：開啟":"音效：關閉";
+};
+$("retryBtn").onclick=()=>{
+ score=levelStartScore;
+ startLevel(false);
+};
+levelStartScore=0;
+startLevel(true);
 })();
 </script>
 </body></html>
