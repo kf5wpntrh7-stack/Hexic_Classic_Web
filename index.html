@@ -3,125 +3,252 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#77c5ef">
 <title>Hexic Classic Web</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#84cdf5;color:#fff}
-body{display:flex;justify-content:center;align-items:flex-start;padding:10px;background:
-linear-gradient(180deg,#9be0ff 0%,#72c4f1 48%,#4ca8e4 100%)}
-.game{width:min(100%,570px)}
-.chrome{border-radius:28px;padding:10px;background:
-linear-gradient(#f8fbff 0,#9ec9ef 8%,#2f7ac0 18%,#125395 82%,#8fc5ee 94%,#f7fbff 100%);
-box-shadow:0 0 0 2px #174f87,0 0 0 4px #d4edff,0 18px 42px #195c8e88}
-.titlebar{height:53px;border-radius:19px 19px 8px 8px;background:
-linear-gradient(180deg,#ffffff,#a9d7f7 14%,#2376bd 49%,#092f77 50%,#164997 82%,#89c8ef);
-border:1px solid #d8f1ff;box-shadow:inset 0 1px #ffffff,inset 0 -2px #063369;
-display:flex;align-items:center;justify-content:space-between;padding:0 18px}
-.logo{font-size:22px;font-weight:bold;font-style:italic;letter-spacing:-1px;text-shadow:0 2px 0 #082b62,0 0 8px #d9f3ff}
-.scorebox{font-size:12px;color:#d7efff;text-align:right}.scorebox b{display:block;font-size:23px;color:#fff;line-height:21px}
-.boardwrap{margin-top:7px;border:2px solid #343b75;border-radius:10px;background:
-radial-gradient(circle at 50% 38%,#d4f3ff 0,#9bdafa 48%,#64b9eb 100%);
-box-shadow:inset 0 0 28px #2e80b766;overflow:hidden}
-canvas{display:block;width:100%;height:auto;aspect-ratio:1/1;touch-action:none}
-.panel{margin-top:8px;text-align:center;color:#eaf7ff;font-size:12px;line-height:1.6}
-.smallrow{display:flex;gap:7px;margin-top:7px}
-.btn{flex:1;min-height:39px;border-radius:13px;border:1px solid #8c92c5;color:#fff;font-weight:bold;font-size:12px;
-background:linear-gradient(#ffffff,#a9dafa 20%,#3f94d1 50%,#1763a8 51%,#4da5dd);box-shadow:inset 0 1px #ffffff,0 2px 0 #165a91;cursor:pointer}
-.btn:active{transform:translateY(1px);filter:brightness(.85)}
-.note{text-align:center;color:#0f4d87;font-size:11px;line-height:1.5;margin:10px}
-@media(max-width:480px){body{padding:5px}.chrome{padding:7px;border-radius:20px}.titlebar{height:47px}.logo{font-size:19px}}
+*{box-sizing:border-box}
+:root{
+  --sky1:#eaf8ff;--sky2:#b8e4fb;--sky3:#72bce9;
+  --navy1:#4452a5;--navy2:#252d83;--navy3:#172065;
+  --silver:#e9f7ff;--line:#93c8e9;--ink:#203f8a;
+}
+html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#76bee8;color:#fff}
+body{
+  display:flex;justify-content:center;align-items:flex-start;padding:6px;
+  background:
+    radial-gradient(circle at 50% 0,#f4fbff 0,#c9edff 25%,#87cbed 60%,#5aa9da 100%);
+}
+.app{width:min(100%,690px)}
+.frame{
+  border-radius:18px;padding:5px;
+  background:linear-gradient(180deg,#ffffff,#cdeeff 4%,#5ba7d7 11%,#2b70b5 87%,#cceeff 96%,#fff);
+  border:1px solid #e8f8ff;
+  box-shadow:0 0 0 2px #327db9,0 12px 35px #2b6a9d66,inset 0 1px #fff;
+  overflow:hidden;
+}
+.top{
+  height:64px;display:grid;grid-template-columns:1fr 1.2fr 1.3fr;
+  border-radius:13px 13px 0 0;overflow:hidden;
+  background:linear-gradient(180deg,#6a70aa 0,#4e57a1 28%,#303c91 29%,#232c80 100%);
+  box-shadow:inset 0 1px #ffffffc0,inset 0 -2px #11185d;
+}
+.stat{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-right:1px solid #7e8bc7;text-shadow:0 1px 0 #141a58;
+}
+.stat:last-child{border-right:0}
+.stat span{font-size:13px;font-weight:bold;letter-spacing:.02em}
+.stat b{font-size:23px;line-height:25px;color:#a8c7ff}
+.playfield{
+  position:relative;min-height:560px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.05)),
+    repeating-linear-gradient(90deg,rgba(72,154,210,.12) 0 2px,transparent 2px 6px),
+    linear-gradient(180deg,#c8ecff,#a8dcf8 55%,#8dcbed);
+  border-left:1px solid #cfeeff;border-right:1px solid #cfeeff;
+  overflow:hidden;
+}
+.playfield:before{
+  content:"";position:absolute;inset:0;opacity:.25;pointer-events:none;
+  background-image:
+    linear-gradient(30deg,#fff3 12%,transparent 12.5%,transparent 87%,#fff3 87.5%,#fff3),
+    linear-gradient(150deg,#fff3 12%,transparent 12.5%,transparent 87%,#fff3 87.5%,#fff3);
+  background-size:54px 94px;background-position:0 0,27px 47px;
+}
+canvas{position:relative;display:block;width:100%;height:auto;aspect-ratio:1/1;touch-action:none;user-select:none}
+.bottom{
+  height:88px;display:grid;grid-template-columns:145px 76px 1fr;
+  align-items:end;gap:8px;padding:0 10px 8px;
+  background:linear-gradient(180deg,#9bd3f1 0,#6db4e2 55%,#4c96ce 100%);
+  border-radius:0 0 13px 13px;border-top:1px solid #d9f2ff;
+}
+.rotate-wrap{align-self:end;text-align:center}
+.rotate{
+  width:112px;height:112px;margin-top:-48px;border-radius:50%;
+  border:7px solid #d7efff;background:
+    radial-gradient(circle at 45% 35%,#5a86dd 0,#2e57bc 46%,#173a99 75%,#0c277d 100%);
+  box-shadow:0 0 0 3px #477fbe,0 5px 10px #2d6a9d88,inset 0 3px #ffffffb8;
+  color:#ffef50;font-size:72px;line-height:88px;font-weight:bold;cursor:pointer;
+  text-shadow:0 3px 0 #22356f;transition:transform .16s ease;
+}
+.rotate.right{transform:scaleX(-1)}
+.rotate:active{filter:brightness(.9)}
+.rotate-label{font-weight:bold;color:#24438e;text-shadow:0 1px #fff;font-size:13px;margin-top:-2px}
+.undo{
+  width:64px;height:64px;border-radius:50%;border:5px solid #d8f1ff;
+  background:linear-gradient(180deg,#4776ce,#204ca9);
+  color:#fff;font-size:36px;font-weight:bold;cursor:pointer;
+  box-shadow:0 0 0 2px #3b78b7,inset 0 2px #ffffff9e;
+}
+.menu{
+  height:52px;border-radius:36px 36px 6px 6px;border:2px solid #79b6e1;
+  background:linear-gradient(180deg,#edfaff 0,#9ed9f6 34%,#4fa6dd 35%,#2a7cc7 100%);
+  color:#263b90;font-weight:bold;font-size:22px;letter-spacing:.04em;cursor:pointer;
+  box-shadow:inset 0 2px #fff,0 2px 0 #246ca8;
+}
+.overlay{
+  position:absolute;inset:0;background:rgba(30,75,125,.72);display:flex;
+  align-items:center;justify-content:center;padding:20px;z-index:5;backdrop-filter:blur(3px);
+}
+.overlay.hidden{display:none}
+.panel{
+  width:min(92%,390px);border-radius:22px;padding:22px;text-align:center;
+  background:linear-gradient(180deg,#f8fdff,#ccecff);
+  border:4px solid #fff;box-shadow:0 0 0 3px #4e93c7,0 18px 50px #174c7b80;
+  color:#24448d;
+}
+.panel h2{margin:0 0 9px;font-size:28px}
+.panel p{margin:8px 0 17px;line-height:1.55;color:#41659e}
+.panel button{
+  width:100%;padding:12px;margin-top:8px;border-radius:14px;border:2px solid #88bee1;
+  background:linear-gradient(#fff,#a9dcf5 48%,#4e9ed6 49%,#2e7dc1);
+  color:#203c88;font-weight:bold;font-size:16px;cursor:pointer;
+}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;max-height:260px;overflow:auto;padding:4px}
+.level-grid button{padding:8px 0;margin:0}
+.level-grid button.locked{filter:grayscale(1);opacity:.45}
+.toast{
+  position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);
+  padding:13px 22px;border-radius:20px;background:#ffffffed;color:#294b99;
+  font-size:23px;font-weight:bold;box-shadow:0 7px 25px #2b659c66;z-index:4;
+  pointer-events:none;
+}
+.toast.hidden{display:none}
+@media(max-width:540px){
+  .top{height:57px}.stat span{font-size:11px}.stat b{font-size:20px}
+  .bottom{grid-template-columns:115px 62px 1fr;height:76px;padding:0 6px 6px}
+  .rotate{width:92px;height:92px;font-size:60px;line-height:72px;margin-top:-38px}
+  .undo{width:54px;height:54px;font-size:30px}.menu{font-size:18px;height:45px}
+}
 </style>
 </head>
 <body>
-<div class="game">
-  <div class="chrome">
-    <div class="titlebar">
-      <div class="logo">HEXIC</div>
-      <div class="scorebox">SCORE <b id="score">0</b></div>
-    </div>
-    <div class="boardwrap"><canvas id="c" width="700" height="700"></canvas></div>
-    <div class="panel">點一下三顆寶石的交界處即可旋轉<br><span id="combo">COMBO 0</span></div>
-    <div class="smallrow">
-      <button class="btn" id="direction">目前：左旋轉 ↶</button>
-    </div>
-    <div class="smallrow">
-      <button class="btn" id="new">NEW GAME</button>
-      <button class="btn" id="shuffle">SHUFFLE</button>
-      <button class="btn" id="sound">SOUND ON</button>
-    </div>
+<div class="app">
+  <div class="frame">
+    <header class="top">
+      <div class="stat"><span>Level</span><b id="level">1</b></div>
+      <div class="stat"><span>Score</span><b id="score">0</b></div>
+      <div class="stat"><span>Combos To Go</span><b id="goal">5</b></div>
+    </header>
+
+    <section class="playfield">
+      <canvas id="game" width="720" height="720" aria-label="Hexic 遊戲棋盤"></canvas>
+      <div id="toast" class="toast hidden"></div>
+
+      <div id="menuOverlay" class="overlay hidden">
+        <div class="panel">
+          <h2>HEXIC</h2>
+          <p>完成指定次數的消除，即可進入下一關。旋轉鈕可切換左轉／右轉方向。</p>
+          <button id="resumeBtn">繼續遊戲</button>
+          <button id="levelsBtn">選擇關卡</button>
+          <button id="restartBtn">重新開始本關</button>
+          <button id="soundBtn">音效：開啟</button>
+        </div>
+      </div>
+
+      <div id="levelOverlay" class="overlay hidden">
+        <div class="panel">
+          <h2>選擇關卡</h2>
+          <div id="levelGrid" class="level-grid"></div>
+          <button id="backBtn">返回</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bottom">
+      <div class="rotate-wrap">
+        <button id="rotateBtn" class="rotate" aria-label="切換旋轉方向">↻</button>
+        <div id="rotateLabel" class="rotate-label">Rotation：左旋轉</div>
+      </div>
+      <button id="undoBtn" class="undo" aria-label="復原">↶</button>
+      <button id="menuBtn" class="menu">MENU</button>
+    </footer>
   </div>
-  <div class="note">預設左旋轉；按下方按鈕可切換成右旋轉</div>
 </div>
+
 <script>
 (()=>{
 "use strict";
-const cv=document.getElementById("c"),ctx=cv.getContext("2d");
-const scoreEl=document.getElementById("score"),comboEl=document.getElementById("combo");
-const ROWS=9,COLS=9;
-const COLORS=["#1d57e6","#18d940","#f14b4f","#f6aa24","#9a43c9","#54c6ef","#087c26"];
-let board=[], selected=null, score=0, combo=0, busy=false, soundOn=true, currentDir=-1;
-let animPieces=[], vanishing=new Set();
-const AC=window.AudioContext||window.webkitAudioContext; let ac=null;
 
+const cv=document.getElementById("game"),ctx=cv.getContext("2d");
+const levelEl=document.getElementById("level"),scoreEl=document.getElementById("score"),goalEl=document.getElementById("goal");
+const rotateBtn=document.getElementById("rotateBtn"),rotateLabel=document.getElementById("rotateLabel");
+const menuOverlay=document.getElementById("menuOverlay"),levelOverlay=document.getElementById("levelOverlay");
+const toast=document.getElementById("toast"),levelGrid=document.getElementById("levelGrid");
+
+const ROWS=9,COLS=9,MAX_LEVEL=100;
+const COLORS=["#f16a61","#f4ad43","#6ce75f","#914bc1","#3159e8","#65ccef"];
+let board=[],selected=null,busy=false,currentDir=-1,soundOn=true;
+let level=1,score=0,combosToGo=5,unlocked=1,history=[],animPieces=[],vanishing=new Set();
+
+try{
+  unlocked=Math.max(1,Number(localStorage.getItem("hexic_unlocked")||1));
+  level=Math.min(unlocked,Math.max(1,Number(localStorage.getItem("hexic_level")||1)));
+}catch(e){}
+
+const AC=window.AudioContext||window.webkitAudioContext;let ac=null;
 function beep(f=520,d=.06){
   if(!soundOn)return;
   try{
-    ac=ac||new AC(); if(ac.state==="suspended") ac.resume();
-    const o=ac.createOscillator(),g=ac.createGain();
-    o.frequency.value=f;o.type="sine";g.gain.value=.035;
-    o.connect(g);g.connect(ac.destination);o.start();
-    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d);
+    ac=ac||new AC();if(ac.state==="suspended")ac.resume();
+    const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.type="sine";g.gain.value=.03;
+    o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d);
   }catch(e){}
 }
-function rnd(){return Math.floor(Math.random()*COLORS.length)}
-function geo(){const s=36,dx=Math.sqrt(3)*s,dy=1.5*s,w=dx*(COLS+.5),h=dy*(ROWS-1)+2*s;return{s,dx,dy,ox:(700-w)/2+dx/2,oy:(700-h)/2+s}}
-function center(r,c){const g=geo();return{x:g.ox+c*g.dx+(r%2)*g.dx/2,y:g.oy+r*g.dy}}
-function hexPath(cx,cy,s,scale=.9){
+function randColor(){return Math.floor(Math.random()*Math.min(6,5+Math.floor((level-1)/12)))}
+function levelGoal(n){return 5+Math.floor((n-1)/4)}
+function geometry(){
+  const s=37,dx=Math.sqrt(3)*s,dy=1.5*s,w=dx*(COLS+.5),h=dy*(ROWS-1)+2*s;
+  return{s,dx,dy,ox:(720-w)/2+dx/2,oy:(720-h)/2+s+6};
+}
+function center(r,c){
+  const g=geometry();return{x:g.ox+c*g.dx+(r%2)*g.dx/2,y:g.oy+r*g.dy};
+}
+function hexPath(x,y,s,scale=.88){
   ctx.beginPath();
   for(let i=0;i<6;i++){
-    const a=Math.PI/6+i*Math.PI/3,px=cx+Math.cos(a)*s*scale,py=cy+Math.sin(a)*s*scale;
+    const a=Math.PI/6+i*Math.PI/3,px=x+Math.cos(a)*s*scale,py=y+Math.sin(a)*s*scale;
     i?ctx.lineTo(px,py):ctx.moveTo(px,py);
   }
   ctx.closePath();
 }
 function shade(h,n){
-  const v=parseInt(h.slice(1),16);
-  const r=Math.max(0,Math.min(255,(v>>16)+n));
-  const g=Math.max(0,Math.min(255,((v>>8)&255)+n));
-  const b=Math.max(0,Math.min(255,(v&255)+n));
+  const v=parseInt(h.slice(1),16),r=Math.max(0,Math.min(255,(v>>16)+n)),
+  g=Math.max(0,Math.min(255,((v>>8)&255)+n)),b=Math.max(0,Math.min(255,(v&255)+n));
   return `rgb(${r},${g},${b})`;
 }
 function drawGemAt(x,y,color,alpha=1,scale=1){
-  const g=geo(),col=COLORS[color];
+  const g=geometry(),col=COLORS[color];
   ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.scale(scale,scale);ctx.translate(-x,-y);
-  ctx.shadowColor="#000";ctx.shadowBlur=12;ctx.shadowOffsetY=5;
+  ctx.shadowColor="#4d7aa8";ctx.shadowBlur=4;ctx.shadowOffsetY=2;
   const gr=ctx.createLinearGradient(x-g.s,y-g.s,x+g.s,y+g.s);
-  gr.addColorStop(0,shade(col,75));gr.addColorStop(.28,shade(col,25));gr.addColorStop(.62,col);gr.addColorStop(1,shade(col,-70));
-  hexPath(x,y,g.s,.88);ctx.fillStyle=gr;ctx.fill();
-  ctx.shadowColor="transparent";ctx.lineWidth=2;ctx.strokeStyle="#f8fdff";ctx.stroke();
-  hexPath(x,y,g.s,.68);ctx.lineWidth=4;ctx.strokeStyle="#1b4688aa";ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x-g.s*.38,y-g.s*.18);ctx.lineTo(x-g.s*.05,y-g.s*.46);ctx.lineTo(x+g.s*.28,y-g.s*.31);
-  ctx.strokeStyle="#f8fdff";ctx.lineWidth=5;ctx.lineCap="round";ctx.stroke();
+  gr.addColorStop(0,shade(col,65));gr.addColorStop(.23,shade(col,25));gr.addColorStop(.58,col);gr.addColorStop(1,shade(col,-50));
+  hexPath(x,y,g.s,.9);ctx.fillStyle=gr;ctx.fill();
+  ctx.shadowColor="transparent";ctx.lineWidth=5;ctx.strokeStyle="#edfaff";ctx.stroke();
+  hexPath(x,y,g.s,.73);ctx.lineWidth=2;ctx.strokeStyle=shade(col,-55);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-g.s*.42,y-g.s*.12);ctx.lineTo(x-g.s*.1,y-g.s*.43);ctx.lineTo(x+g.s*.28,y-g.s*.3);
+  ctx.strokeStyle="#ffffffcc";ctx.lineWidth=5;ctx.lineCap="round";ctx.stroke();
   ctx.restore();
 }
 function draw(){
-  ctx.clearRect(0,0,700,700);
-  const bg=ctx.createRadialGradient(350,270,20,350,350,430);
-  bg.addColorStop(0,"#d7f5ff");bg.addColorStop(.55,"#9adbf8");bg.addColorStop(1,"#68b9e8");
-  ctx.fillStyle=bg;ctx.fillRect(0,0,700,700);
-
+  ctx.clearRect(0,0,720,720);
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
-    const key=`${r},${c}`;
-    if(board[r][c]!=null&&!vanishing.has(key)){
+    const k=`${r},${c}`;
+    if(board[r][c]!=null&&!vanishing.has(k)){
       const p=center(r,c);drawGemAt(p.x,p.y,board[r][c]);
     }
   }
-
-  for(const p of animPieces) drawGemAt(p.x,p.y,p.color,p.alpha??1,p.scale??1);
-
+  animPieces.forEach(p=>drawGemAt(p.x,p.y,p.color,p.alpha??1,p.scale??1));
   if(selected&&!busy){
-    const ps=selected.map(v=>center(...v)),cx=ps.reduce((s,v)=>s+v.x,0)/3,cy=ps.reduce((s,v)=>s+v.y,0)/3;
-    ctx.save();ctx.shadowColor="#fff";ctx.shadowBlur=16;ctx.strokeStyle="#fff";ctx.lineWidth=6;
-    ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);ctx.stroke();ctx.restore();
+    const ps=selected.map(v=>center(...v)),cx=ps.reduce((s,p)=>s+p.x,0)/3,cy=ps.reduce((s,p)=>s+p.y,0)/3;
+    ctx.save();ctx.fillStyle="#fff";ctx.shadowColor="#355ab6";ctx.shadowBlur=12;
+    ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#f2cf39";ctx.beginPath();
+    for(let i=0;i<10;i++){
+      const a=-Math.PI/2+i*Math.PI/5,rr=i%2?7:14;
+      const px=cx+Math.cos(a)*rr,py=cy+Math.sin(a)*rr;i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+    }
+    ctx.closePath();ctx.fill();ctx.restore();
   }
 }
 function neigh(r,c){
@@ -129,169 +256,166 @@ function neigh(r,c){
   const d=even?[[-1,-1],[-1,0],[0,1],[1,0],[1,-1],[0,-1]]:[[-1,0],[-1,1],[0,1],[1,1],[1,0],[0,-1]];
   return d.map(([dr,dc])=>[r+dr,c+dc]);
 }
-function ok(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS}
+function valid(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS}
 function allTriangles(){
-  const m=new Map();
+  const map=new Map();
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
     const n=neigh(r,c);
     for(let i=0;i<6;i++){
       const t=[[r,c],n[i],n[(i+1)%6]];
-      if(t.every(v=>ok(...v))){
-        const k=t.map(v=>v.join(",")).sort().join("|");m.set(k,t);
+      if(t.every(v=>valid(...v))){
+        const key=t.map(v=>v.join(",")).sort().join("|");map.set(key,t);
       }
     }
   }
-  return [...m.values()];
+  return [...map.values()];
 }
-function findMatches(){
-  const s=new Set();
+function matches(){
+  const set=new Set();
   for(const t of allTriangles()){
     const v=t.map(([r,c])=>board[r][c]);
-    if(v[0]!=null&&v.every(x=>x===v[0])) t.forEach(q=>s.add(q.join(",")));
+    if(v[0]!=null&&v.every(x=>x===v[0]))t.forEach(q=>set.add(q.join(",")));
   }
-  return s;
+  return set;
 }
 function pick(mx,my){
-  let best=[0,0],bd=Infinity;
+  let nearest=[0,0],bd=Infinity;
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
-    const p=center(r,c),d=(p.x-mx)**2+(p.y-my)**2;
-    if(d<bd){bd=d;best=[r,c]}
+    const p=center(r,c),d=(p.x-mx)**2+(p.y-my)**2;if(d<bd){bd=d;nearest=[r,c]}
   }
-  const [r,c]=best,q=center(r,c);
-  let ang=Math.atan2(my-q.y,mx-q.x);if(ang<0)ang+=Math.PI*2;
+  const [r,c]=nearest,q=center(r,c);let ang=Math.atan2(my-q.y,mx-q.x);if(ang<0)ang+=Math.PI*2;
   const sec=Math.floor((ang+Math.PI/6)/(Math.PI/3))%6,n=neigh(r,c);
   const opts=[[[r,c],n[sec],n[(sec+1)%6]],[[r,c],n[(sec+5)%6],n[sec]]];
-  return opts.find(t=>t.every(v=>ok(...v)))||null;
+  return opts.find(t=>t.every(v=>valid(...v)))||null;
 }
 function order(t){
   const ps=t.map(v=>({v,...center(...v)})),cx=ps.reduce((s,p)=>s+p.x,0)/3,cy=ps.reduce((s,p)=>s+p.y,0)/3;
   return ps.sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx)).map(p=>p.v);
 }
-function ui(){scoreEl.textContent=score;comboEl.textContent="COMBO "+combo}
-function tween(ms,update){
+function tween(ms,fn){
   return new Promise(resolve=>{
     const start=performance.now();
     function frame(now){
-      const t=Math.min(1,(now-start)/ms);
-      update(1-Math.pow(1-t,3));
-      draw();
-      if(t<1)requestAnimationFrame(frame);else resolve();
+      const t=Math.min(1,(now-start)/ms);fn(1-Math.pow(1-t,3));draw();
+      t<1?requestAnimationFrame(frame):resolve();
     }
     requestAnimationFrame(frame);
   });
 }
+function updateUI(){
+  levelEl.textContent=level;scoreEl.textContent=score.toLocaleString();goalEl.textContent=Math.max(0,combosToGo);
+  try{localStorage.setItem("hexic_level",String(level));localStorage.setItem("hexic_unlocked",String(unlocked))}catch(e){}
+}
+function saveHistory(){
+  history.push({board:board.map(r=>r.slice()),score,combosToGo});
+  if(history.length>12)history.shift();
+}
 async function rotate(dir){
   if(!selected||busy)return;
-  busy=true;
-  const tri=order(selected), vals=tri.map(([r,c])=>board[r][c]);
-  const pts=tri.map(v=>center(...v));
+  saveHistory();busy=true;
+  const tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v));
   const cx=pts.reduce((s,p)=>s+p.x,0)/3,cy=pts.reduce((s,p)=>s+p.y,0)/3;
   const targets=dir>0?[2,0,1]:[1,2,0];
   tri.forEach(([r,c])=>board[r][c]=null);
   animPieces=vals.map((color,i)=>({color,x:pts[i].x,y:pts[i].y}));
-  beep(dir>0?570:450);
-  await tween(180,t=>{
-    const angle=(dir>0?1:-1)*(Math.PI*2/3)*t;
+  beep(dir>0?590:440);
+  await tween(170,t=>{
+    const a=(dir>0?1:-1)*Math.PI*2/3*t;
     animPieces.forEach((p,i)=>{
       const ox=pts[i].x-cx,oy=pts[i].y-cy;
-      p.x=cx+ox*Math.cos(angle)-oy*Math.sin(angle);
-      p.y=cy+ox*Math.sin(angle)+oy*Math.cos(angle);
+      p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a);
     });
   });
   tri.forEach(([r,c],i)=>board[r][c]=vals[targets[i]]);
   animPieces=[];draw();
-  await resolveBoard();
-  busy=false;
+  await resolveBoard();busy=false;
 }
 async function resolveBoard(){
   let chain=0;
   while(true){
-    const matches=findMatches();
-    if(!matches.size)break;
-    chain++;combo=chain;ui();
-    vanishing=new Set(matches);
-    animPieces=[...matches].map(k=>{
-      const [r,c]=k.split(",").map(Number),p=center(r,c);
-      return{color:board[r][c],x:p.x,y:p.y,alpha:1,scale:1};
-    });
-    beep(650+chain*60,.1);
-    await tween(200,t=>{
-      animPieces.forEach(p=>{p.alpha=1-t;p.scale=1+.25*t});
-    });
-    matches.forEach(k=>{const[r,c]=k.split(",").map(Number);board[r][c]=null});
-    score+=matches.size*100*chain;ui();
+    const m=matches();if(!m.size)break;
+    chain++;combosToGo--;score+=m.size*100*chain;updateUI();
+    vanishing=new Set(m);
+    animPieces=[...m].map(k=>{const[r,c]=k.split(",").map(Number),p=center(r,c);return{color:board[r][c],x:p.x,y:p.y,alpha:1,scale:1}});
+    beep(650+chain*65,.1);
+    await tween(190,t=>animPieces.forEach(p=>{p.alpha=1-t;p.scale=1+.28*t}));
+    m.forEach(k=>{const[r,c]=k.split(",").map(Number);board[r][c]=null});
     animPieces=[];vanishing.clear();draw();
-    await animateGravity();
+    await gravity();
   }
-  if(chain===0)combo=0;
-  ui();
+  if(combosToGo<=0)await levelComplete();
 }
-async function animateGravity(){
+async function gravity(){
   const moves=[];
   for(let c=0;c<COLS;c++){
     const survivors=[];
-    for(let r=ROWS-1;r>=0;r--) if(board[r][c]!=null) survivors.push({color:board[r][c],from:r});
-    for(let r=0;r<ROWS;r++) board[r][c]=null;
+    for(let r=ROWS-1;r>=0;r--)if(board[r][c]!=null)survivors.push({color:board[r][c],from:r});
+    for(let r=0;r<ROWS;r++)board[r][c]=null;
     let dest=ROWS-1;
-    for(const s of survivors){
-      moves.push({color:s.color,fromR:s.from,toR:dest,c});
-      dest--;
-    }
-    let spawnIndex=0;
-    while(dest>=0){
-      moves.push({color:rnd(),fromR:-1-spawnIndex,toR:dest,c});
-      dest--;spawnIndex++;
-    }
+    for(const s of survivors)moves.push({color:s.color,fromR:s.from,toR:dest--,c});
+    let spawn=1;while(dest>=0)moves.push({color:randColor(),fromR:-spawn++,toR:dest--,c});
   }
-
   animPieces=moves.map(m=>{
-    const from=center(Math.max(0,m.fromR),m.c),to=center(m.toR,m.c);
-    const extra=m.fromR<0?geo().dy*(Math.abs(m.fromR)+1):0;
-    return{...m,x:from.x,y:from.y-extra,toX:to.x,toY:to.y};
+    const to=center(m.toR,m.c),base=center(0,m.c);
+    const fromY=m.fromR<0?base.y-geometry().dy*Math.abs(m.fromR):center(m.fromR,m.c).y;
+    return{...m,x:base.x,y:fromY,fromY,toX:to.x,toY:to.y};
   });
-  await tween(320,t=>{
-    animPieces.forEach(p=>{
-      p.x=p.x+(p.toX-p.x)*t;
-      p.y=p.y+(p.toY-p.y)*t;
-    });
-  });
-  for(const m of moves) board[m.toR][m.c]=m.color;
-  animPieces=[];draw();
+  await tween(300,t=>animPieces.forEach(p=>{p.x=p.x+(p.toX-p.x)*t;p.y=p.fromY+(p.toY-p.fromY)*t}));
+  moves.forEach(m=>board[m.toR][m.c]=m.color);animPieces=[];draw();
 }
-function init(){
-  score=combo=0;selected=null;busy=false;animPieces=[];vanishing.clear();
-  board=Array.from({length:ROWS},()=>Array.from({length:COLS},rnd));
-  for(let i=0;i<60;i++){
-    const m=findMatches();if(!m.size)break;
-    m.forEach(k=>{const[r,c]=k.split(",").map(Number);board[r][c]=rnd()});
+function showToast(text,ms=900){
+  toast.textContent=text;toast.classList.remove("hidden");
+  setTimeout(()=>toast.classList.add("hidden"),ms);
+}
+async function levelComplete(){
+  busy=true;showToast(`LEVEL ${level} COMPLETE!`,1100);beep(840,.18);
+  await new Promise(r=>setTimeout(r,1150));
+  if(level<MAX_LEVEL){level++;unlocked=Math.max(unlocked,level);startLevel(level,false)}
+  else{showToast("全部 100 關完成！",1800);busy=false}
+}
+function cleanBoard(){
+  for(let i=0;i<80;i++){
+    const m=matches();if(!m.size)break;
+    m.forEach(k=>{const[r,c]=k.split(",").map(Number);board[r][c]=randColor()});
   }
-  ui();draw();
+}
+function startLevel(n,resetScore=false){
+  level=n;if(resetScore)score=0;combosToGo=levelGoal(level);history=[];selected=null;busy=false;
+  board=Array.from({length:ROWS},()=>Array.from({length:COLS},randColor));cleanBoard();updateUI();draw();
+}
+function buildLevels(){
+  levelGrid.innerHTML="";
+  for(let i=1;i<=MAX_LEVEL;i++){
+    const b=document.createElement("button");b.textContent=i;
+    if(i>unlocked)b.classList.add("locked");
+    b.addEventListener("click",()=>{
+      if(i>unlocked)return;
+      levelOverlay.classList.add("hidden");menuOverlay.classList.add("hidden");startLevel(i,false);
+    });
+    levelGrid.appendChild(b);
+  }
 }
 cv.addEventListener("pointerdown",e=>{
-  if(busy)return;e.preventDefault();
-  const b=cv.getBoundingClientRect(),mx=(e.clientX-b.left)*700/b.width,my=(e.clientY-b.top)*700/b.height;
-  selected=pick(mx,my);draw();if(selected)rotate(currentDir);
+  if(busy||!menuOverlay.classList.contains("hidden")||!levelOverlay.classList.contains("hidden"))return;
+  e.preventDefault();const b=cv.getBoundingClientRect();
+  selected=pick((e.clientX-b.left)*720/b.width,(e.clientY-b.top)*720/b.height);draw();
+  if(selected)rotate(currentDir);
 });
-cv.addEventListener("contextmenu",e=>{
-  e.preventDefault();if(busy)return;
-  const b=cv.getBoundingClientRect(),mx=(e.clientX-b.left)*700/b.width,my=(e.clientY-b.top)*700/b.height;
-  selected=pick(mx,my);draw();if(selected)rotate(-currentDir);
+rotateBtn.addEventListener("click",()=>{
+  currentDir*=-1;rotateBtn.classList.toggle("right",currentDir===1);
+  rotateLabel.textContent=currentDir===-1?"Rotation：左旋轉":"Rotation：右旋轉";beep(currentDir===-1?430:590);
 });
-document.getElementById("direction").onclick=e=>{
-  if(busy)return;
-  currentDir=currentDir===-1?1:-1;
-  e.target.textContent=currentDir===-1?"目前：左旋轉 ↶":"目前：右旋轉 ↷";
-  beep(currentDir===-1?430:570);
-};
-document.getElementById("new").onclick=()=>{if(confirm("開始新遊戲？"))init()};
-document.getElementById("shuffle").onclick=()=>{
-  if(busy)return;
-  const vals=board.flat().sort(()=>Math.random()-.5);
-  board=Array.from({length:ROWS},(_,r)=>vals.slice(r*COLS,(r+1)*COLS));
-  selected=null;combo=0;ui();draw();beep(350);
-};
-document.getElementById("sound").onclick=e=>{soundOn=!soundOn;e.target.textContent=soundOn?"SOUND ON":"SOUND OFF"};
-init();
+document.getElementById("undoBtn").addEventListener("click",()=>{
+  if(busy||!history.length)return;
+  const h=history.pop();board=h.board.map(r=>r.slice());score=h.score;combosToGo=h.combosToGo;selected=null;updateUI();draw();beep(360);
+});
+document.getElementById("menuBtn").addEventListener("click",()=>menuOverlay.classList.remove("hidden"));
+document.getElementById("resumeBtn").addEventListener("click",()=>menuOverlay.classList.add("hidden"));
+document.getElementById("levelsBtn").addEventListener("click",()=>{buildLevels();menuOverlay.classList.add("hidden");levelOverlay.classList.remove("hidden")});
+document.getElementById("backBtn").addEventListener("click",()=>{levelOverlay.classList.add("hidden");menuOverlay.classList.remove("hidden")});
+document.getElementById("restartBtn").addEventListener("click",()=>{menuOverlay.classList.add("hidden");startLevel(level,false)});
+document.getElementById("soundBtn").addEventListener("click",e=>{soundOn=!soundOn;e.target.textContent=soundOn?"音效：開啟":"音效：關閉"});
+startLevel(level,true);
 })();
 </script>
 </body>
