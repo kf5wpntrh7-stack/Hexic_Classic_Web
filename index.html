@@ -40,10 +40,11 @@ background:linear-gradient(#424a89,#20265d 50%,#11163d 51%,#292f6d);box-shadow:i
       <div class="scorebox">SCORE <b id="score">0</b></div>
     </div>
     <div class="boardwrap"><canvas id="c" width="700" height="700"></canvas></div>
-    <div class="panel">
-      <button class="btn" id="left">↶ 逆時針</button>
-      <div class="center">SELECT & ROTATE<br><span id="combo">COMBO 0</span></div>
-      <button class="btn" id="right">順時針 ↷</button>
+    <div class="panel" style="grid-template-columns:1fr">
+      <div class="center" style="font-size:13px;line-height:1.6">
+        點一下交界處：順時針旋轉<br>
+        <span id="combo">COMBO 0</span>
+      </div>
     </div>
     <div class="smallrow">
       <button class="btn" id="new">NEW GAME</button>
@@ -51,7 +52,7 @@ background:linear-gradient(#424a89,#20265d 50%,#11163d 51%,#292f6d);box-shadow:i
       <button class="btn" id="sound">SOUND ON</button>
     </div>
   </div>
-  <div class="note">點三顆寶石中央的交界處，再選擇旋轉方向。右鍵也可逆時針旋轉。</div>
+  <div class="note">滑鼠或手指點一下三顆寶石中央的交界處，即可順時針旋轉；電腦右鍵可逆時針旋轉。</div>
 </div>
 <script>
 (()=>{
@@ -102,9 +103,27 @@ function order(t){let ps=t.map(v=>({v,x:p(...v).x,y:p(...v).y})),cx=ps.reduce((s
 async function rot(dir){if(!sel||busy)return;busy=true;let t=order(sel),v=t.map(q=>a[q[0]][q[1]]);t.forEach((q,i)=>a[q[0]][q[1]]=v[(i+(dir>0?2:1))%3]);beep(dir>0?570:450);draw();await sleep(150);await resolve();busy=false}
 async function resolve(){let ch=0;while(1){let m=matches();if(!m.size)break;ch++;combo=ch;m.forEach(k=>{let[r,c]=k.split(',').map(Number);a[r][c]=null});score+=m.size*100*ch;ui();beep(650+ch*60,.09);draw();await sleep(200);collapse();draw();await sleep(210)}if(!ch)combo=0;ui()}
 function collapse(){for(let c=0;c<C;c++){let v=[];for(let r=R-1;r>=0;r--)if(a[r][c]!=null)v.push(a[r][c]);let i=0;for(let r=R-1;r>=0;r--)a[r][c]=i<v.length?v[i++]:rnd()}}
-cv.addEventListener('pointerdown',e=>{if(busy)return;let b=cv.getBoundingClientRect(),mx=(e.clientX-b.left)*700/b.width,my=(e.clientY-b.top)*700/b.height;sel=pick(mx,my);draw()});
-cv.addEventListener('contextmenu',e=>{e.preventDefault();rot(-1)});
-document.getElementById('left').onclick=()=>rot(-1);document.getElementById('right').onclick=()=>rot(1);
+cv.addEventListener('pointerdown',e=>{
+  if(busy)return;
+  e.preventDefault();
+  let b=cv.getBoundingClientRect(),
+      mx=(e.clientX-b.left)*700/b.width,
+      my=(e.clientY-b.top)*700/b.height;
+  sel=pick(mx,my);
+  draw();
+  if(sel) rot(1);
+});
+cv.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  if(busy)return;
+  let b=cv.getBoundingClientRect(),
+      mx=(e.clientX-b.left)*700/b.width,
+      my=(e.clientY-b.top)*700/b.height;
+  sel=pick(mx,my);
+  draw();
+  if(sel) rot(-1);
+});
+
 document.getElementById('new').onclick=()=>{if(confirm('開始新遊戲？'))init()};
 document.getElementById('shuffle').onclick=()=>{let v=a.flat().sort(()=>Math.random()-.5);a=Array.from({length:R},(_,r)=>v.slice(r*C,(r+1)*C));sel=null;combo=0;ui();draw();beep(350)};
 document.getElementById('sound').onclick=e=>{sound=!sound;e.target.textContent=sound?'SOUND ON':'SOUND OFF'};
