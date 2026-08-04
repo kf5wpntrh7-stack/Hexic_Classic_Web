@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#9bd8f6">
-<title>Hexic Classic Remake v5.0</title>
+<title>Hexic Classic Remake v5.1</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#82c8ed;color:#fff}
 body{display:flex;justify-content:center;align-items:flex-start;padding:clamp(4px,1.2vw,12px);padding-bottom:calc(clamp(8px,2vw,18px) + env(safe-area-inset-bottom));background:linear-gradient(#f2fbff,#b4e2f8 48%,#79bee6);overflow-x:hidden}
@@ -44,7 +44,7 @@ canvas{position:relative;display:block;width:100%;height:auto;aspect-ratio:1/1;t
   <button id="startBtn">開始本關</button>
 </div></div>
 <div id="menuLayer" class="overlay hidden"><div class="panel">
-  <h2>暫停</h2>
+  <h2>暫停</h2><p style="font-size:14px;margin:0 0 8px">自然連鎖只會加分；只有你旋轉造成的第一波消除才會計入關卡目標。</p>
   <button id="continueBtn">繼續遊戲</button>
   <button id="undoMenuBtn">復原一步</button>
   <button id="restartBtn">重新開始本關</button>
@@ -71,15 +71,15 @@ canvas{position:relative;display:block;width:100%;height:auto;aspect-ratio:1/1;t
 const cv=document.getElementById("game"),ctx=cv.getContext("2d"),ROWS=9,COLS=9;
 const COLORS=["#ef665f","#f2a53b","#63df55","#8d49bd","#2855df","#54c3e7","#f0d532"];
 const LEVELS=[
- {kind:"combo",target:7,colors:5,bombs:false,text:"先選擇左旋或右旋，再點泡泡交界處。完成 7 次消除。"},
- {kind:"combo",target:10,colors:5,bombs:false,text:"完成 10 次消除。"},
- {kind:"combo",target:13,colors:5,bombs:false,text:"完成 13 次消除。"},
+ {kind:"combo",target:15,colors:5,bombs:false,text:"先選擇左旋或右旋，再點泡泡交界處。完成 15 次主動消除。"},
+ {kind:"combo",target:20,colors:5,bombs:false,text:"完成 20 次主動消除。"},
+ {kind:"combo",target:25,colors:5,bombs:false,text:"完成 25 次主動消除。"},
  {kind:"star",target:1,colors:5,bombs:false,text:"製造 1 顆 Starflower：讓 6 顆同色寶石圍住中央。"},
- {kind:"combo",target:16,colors:6,bombs:false,text:"新增第 6 種顏色，完成 16 次消除。"},
+ {kind:"combo",target:30,colors:6,bombs:false,text:"新增第 6 種顏色，完成 30 次主動消除。"},
  {kind:"star",target:2,colors:6,bombs:true,text:"炸彈登場：製造 2 顆 Starflower。"},
- {kind:"combo",target:20,colors:6,bombs:true,text:"完成 20 次消除，注意炸彈倒數。"},
+ {kind:"combo",target:35,colors:6,bombs:true,text:"完成 35 次主動消除，注意炸彈倒數。"},
  {kind:"pearl",target:1,colors:7,bombs:true,text:"新增第 7 種顏色，製造 1 顆 Black Pearl。"},
- {kind:"combo",target:25,colors:7,bombs:true,text:"完成 25 次消除。"},
+ {kind:"combo",target:40,colors:7,bombs:true,text:"完成 40 次主動消除。"},
  {kind:"pearlmatch",target:1,colors:7,bombs:true,text:"讓 3 顆 Black Pearl 相連並消除。"}
 ];
 let board=[],selected=null,busy=false,soundOn=true,currentDir=-1,level=1,score=0,levelStartScore=0,remaining=8,history=[],anim=[],vanish=new Set(),gameOver=false,cascadeGuard=0;
@@ -106,11 +106,109 @@ function tween(ms,fn){return new Promise(res=>{const st=performance.now();functi
 function ui(){const c=cfg();$("level").textContent=level;$("score").textContent=score.toLocaleString();$("goal").textContent=Math.max(0,remaining);$("goalName").textContent=c.kind==="combo"?"Combos To Go":c.kind==="star"?"Stars To Go":c.kind==="pearl"?"Pearls To Go":"Pearl Match";$("levelText").textContent=c.text;$("introTitle").textContent=`LEVEL ${level}`}
 function decrementBombs(){let dead=false;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=board[r][c];if(t&&t.bomb!=null){t.bomb--;if(t.bomb<=0)dead=true}}if(dead){gameOver=true;$("overLayer").classList.remove("hidden")}}
 async function rotate(dir){if(!selected||busy||gameOver)return;history.push({b:cloneBoard(),score,remaining});if(history.length>12)history.shift();busy=true;decrementBombs();if(gameOver){busy=false;return}const tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v)),cx=pts.reduce((s,p)=>s+p.x,0)/3,cy=pts.reduce((s,p)=>s+p.y,0)/3,target=dir>0?[2,0,1]:[1,2,0];tri.forEach(([r,c])=>board[r][c]=null);anim=vals.map((t,i)=>({t,x:pts[i].x,y:pts[i].y}));beep(dir>0?590:440);await tween(170,t=>{const a=(dir>0?1:-1)*Math.PI*2/3*t;anim.forEach((p,i)=>{const ox=pts[i].x-cx,oy=pts[i].y-cy;p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a)})});tri.forEach(([r,c],i)=>board[r][c]=vals[target[i]]);anim=[];draw();await resolveBoard();busy=false}
-async function resolveBoard(){cascadeGuard=0;while(cascadeGuard++<24){const pearlFlower=findFlower("star");if(pearlFlower){await createSpecial(pearlFlower,2500);if(cfg().kind==="pearl")remaining--;continue}const normalFlower=findFlower("normal");if(normalFlower){await createSpecial(normalFlower,1000);if(cfg().kind==="star")remaining--;continue}const gs=clusters();if(!gs.length)break;const remove=new Set();let comboCount=0,pearlMatch=false;for(const g of gs){g.cells.forEach(v=>remove.add(v.join(",")));comboCount++;if(g.type==="pearl")pearlMatch=true}score+=remove.size*100*Math.max(1,comboCount);if(cfg().kind==="combo")remaining-=comboCount;if(cfg().kind==="pearlmatch"&&pearlMatch)remaining=0;await removeAndDrop(remove);maybeSpawnBomb()}ui();if(remaining<=0)await complete()}
+async function resolveBoard(){
+ cascadeGuard=0;
+ let firstWave=true;
+ while(cascadeGuard++<24){
+  const pearlFlower=findFlower("star");
+  if(pearlFlower){
+   await createSpecial(pearlFlower,2500);
+   if(cfg().kind==="pearl"&&firstWave)remaining--;
+   firstWave=false;
+   continue
+  }
+  const normalFlower=findFlower("normal");
+  if(normalFlower){
+   await createSpecial(normalFlower,1000);
+   if(cfg().kind==="star"&&firstWave)remaining--;
+   firstWave=false;
+   continue
+  }
+  const gs=clusters();
+  if(!gs.length)break;
+  const remove=new Set();
+  let comboCount=0,pearlMatch=false;
+  for(const g of gs){
+   g.cells.forEach(v=>remove.add(v.join(",")));
+   comboCount++;
+   if(g.type==="pearl")pearlMatch=true
+  }
+  const waveMultiplier=firstWave?1:Math.min(5,cascadeGuard);
+  score+=remove.size*100*Math.max(1,comboCount)*waveMultiplier;
+  // Only the match created directly by the player's rotation advances Combos To Go.
+  if(firstWave&&cfg().kind==="combo")remaining-=1;
+  if(firstWave&&cfg().kind==="pearlmatch"&&pearlMatch)remaining=0;
+  await removeAndDrop(remove);
+  maybeSpawnBomb();
+  firstWave=false
+ }
+ ui();
+ if(remaining<=0)await complete()
+}
 async function createSpecial(f,points){vanish=new Set(f.ring.map(v=>v.join(",")));anim=[...vanish].map(k=>{const[r,c]=k.split(",").map(Number),p=center(r,c);return{t:board[r][c],x:p.x,y:p.y,alpha:1,scale:1}});beep(f.newType==="pearl"?880:760,.13);await tween(210,t=>anim.forEach(p=>{p.alpha=1-t;p.scale=1+.28*t}));f.ring.forEach(([r,c])=>board[r][c]=null);board[f.r][f.c]=tile(f.newType,f.color,null);score+=points;anim=[];vanish.clear();await gravity()}
 async function removeAndDrop(set){vanish=new Set(set);anim=[...set].map(k=>{const[r,c]=k.split(",").map(Number),p=center(r,c);return{t:board[r][c],x:p.x,y:p.y,alpha:1,scale:1}});beep(660,.09);await tween(190,t=>anim.forEach(p=>{p.alpha=1-t;p.scale=1+.25*t}));set.forEach(k=>{const[r,c]=k.split(",").map(Number);board[r][c]=null});anim=[];vanish.clear();await gravity()}
 function maybeSpawnBomb(){if(!cfg().bombs)return;const chance=.18+Math.min(.18,(level-4)*.025);if(Math.random()>chance)return;const spots=[];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(board[r][c]&&board[r][c].type==="normal"&&board[r][c].bomb==null)spots.push([r,c]);if(!spots.length)return;const [r,c]=spots[Math.floor(Math.random()*spots.length)];board[r][c].bomb=Math.max(5,10-Math.floor(level/2));showToast("BOMB!",550)}
-async function gravity(){const moves=[];for(let c=0;c<COLS;c++){const survivors=[];for(let r=ROWS-1;r>=0;r--)if(board[r][c])survivors.push({t:board[r][c],from:r});for(let r=0;r<ROWS;r++)board[r][c]=null;let dest=ROWS-1;for(const s of survivors)moves.push({t:s.t,c,from:s.from,to:dest--});let spawn=1;while(dest>=0)moves.push({t:tile(),c,from:-spawn++,to:dest--})}anim=moves.map(m=>{const from=m.from<0?{x:center(0,m.c).x,y:center(0,m.c).y-geom().dy*Math.abs(m.from)}:center(m.from,m.c),to=center(m.to,m.c);return{...m,x:from.x,y:from.y,fromY:from.y,toX:to.x,toY:to.y}});await tween(300,t=>anim.forEach(p=>{p.x=p.toX;p.y=p.fromY+(p.toY-p.fromY)*t}));moves.forEach(m=>board[m.to][m.c]=m.t);anim=[];draw()}
+function localClusterSize(r,c){
+ const t=board[r][c];
+ if(!t||t.type!=="normal")return 0;
+ const seen=new Set([`${r},${c}`]),q=[[r,c]];
+ while(q.length){
+  const [rr,cc]=q.shift();
+  for(const [nr,nc] of neigh(rr,cc)){
+   if(!valid(nr,nc))continue;
+   const k=`${nr},${nc}`,nt=board[nr][nc];
+   if(!seen.has(k)&&nt&&nt.type==="normal"&&nt.color===t.color){seen.add(k);q.push([nr,nc])}
+  }
+ }
+ return seen.size
+}
+function safeSpawnTile(r,c){
+ // Most new gems avoid an immediate 3+ cluster; a small chance preserves natural cascades.
+ if(Math.random()<0.10)return tile();
+ const options=[];
+ for(let color=0;color<cfg().colors;color++){
+  board[r][c]=tile("normal",color,null);
+  if(localClusterSize(r,c)<3)options.push(color)
+ }
+ board[r][c]=null;
+ const color=options.length?options[Math.floor(Math.random()*options.length)]:rnd();
+ return tile("normal",color,null)
+}
+async function gravity(){
+ const moves=[];
+ // First place all surviving gems at their final vertical destinations.
+ for(let c=0;c<COLS;c++){
+  const survivors=[];
+  for(let r=ROWS-1;r>=0;r--)if(board[r][c])survivors.push({t:board[r][c],from:r});
+  for(let r=0;r<ROWS;r++)board[r][c]=null;
+  let dest=ROWS-1;
+  for(const s of survivors){
+   board[dest][c]=s.t;
+   moves.push({t:s.t,c,from:s.from,to:dest});
+   dest--
+  }
+ }
+ // Fill only the empty top cells, choosing colors that usually do not create instant matches.
+ for(let r=ROWS-1;r>=0;r--){
+  for(let c=0;c<COLS;c++){
+   if(board[r][c]!==null)continue;
+   const t=safeSpawnTile(r,c);
+   board[r][c]=t;
+   moves.push({t,c,from:-1-r,to:r})
+  }
+ }
+ anim=moves.map(m=>{
+  const from=m.from<0?{x:center(0,m.c).x,y:center(0,m.c).y-geom().dy*Math.abs(m.from)}:center(m.from,m.c),to=center(m.to,m.c);
+  return{...m,x:from.x,y:from.y,fromY:from.y,toX:to.x,toY:to.y}
+ });
+ // Hide final board while animated pieces fall.
+ const finalBoard=cloneBoard();
+ board=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+ await tween(300,t=>anim.forEach(p=>{p.x=p.toX;p.y=p.fromY+(p.toY-p.fromY)*t}));
+ board=finalBoard;
+ anim=[];
+ draw()
+}
 function showToast(text,ms=900){$("toast").textContent=text;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),ms)}
 async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;levelStartScore=score;startLevel(true)}else{showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
 function hasImmediate(){return clusters().length||findFlower("normal")||findFlower("star")}
