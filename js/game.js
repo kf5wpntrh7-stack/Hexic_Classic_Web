@@ -2,28 +2,29 @@
 const cv=document.getElementById("game"),ctx=cv.getContext("2d"),ROWS=9,COLS=9;
 const COLORS=["#ef665f","#f2a53b","#63df55","#8d49bd","#2855df","#54c3e7","#f0d532"];
 const LEVELS=[
- {nextScore:1000,colors:4,bombs:false,refillRetries:24,naturalCascadeChance:0.00,text:"4 色教學關：累積 1,000 分自動升級。"},
- {nextScore:3000,colors:5,bombs:false,refillRetries:20,naturalCascadeChance:0.01,text:"增加第 5 色：累積 3,000 分自動升級。"},
- {nextScore:6000,colors:5,bombs:false,refillRetries:16,naturalCascadeChance:0.02,text:"連鎖開始加成：累積 6,000 分自動升級。"},
- {nextScore:10000,colors:5,bombs:false,refillRetries:14,naturalCascadeChance:0.03,text:"累積 10,000 分自動升級。"},
- {nextScore:15000,colors:6,bombs:false,refillRetries:12,naturalCascadeChance:0.03,text:"增加第 6 色：累積 15,000 分自動升級。"},
- {nextScore:22000,colors:6,bombs:true,bombCount:1,bombStart:20,refillRetries:10,naturalCascadeChance:0.04,text:"炸彈登場：累積 22,000 分自動升級。"},
- {nextScore:30000,colors:6,bombs:true,bombCount:2,bombStart:14,refillRetries:9,naturalCascadeChance:0.05,text:"累積 30,000 分自動升級。"},
- {nextScore:40000,colors:6,bombs:true,bombCount:2,bombStart:12,refillRetries:8,naturalCascadeChance:0.05,text:"累積 40,000 分自動升級。"},
- {nextScore:55000,colors:7,bombs:true,bombCount:3,bombStart:10,refillRetries:7,naturalCascadeChance:0.06,text:"增加第 7 色：累積 55,000 分自動升級。"},
- {nextScore:75000,colors:7,bombs:true,bombCount:3,bombStart:9,refillRetries:6,naturalCascadeChance:0.06,text:"最終關：累積 75,000 分完成全部關卡。"}
+ {nextScore:1400,colors:4,bombs:false,refillRetries:24,naturalCascadeChance:0.00,text:"4 色教學關：本關達成 1,400 分即可升級。"},
+ {nextScore:2300,colors:5,bombs:false,refillRetries:22,naturalCascadeChance:0.00,text:"增加第 5 色：本關達成 2,300 分即可升級。"},
+ {nextScore:3400,colors:5,bombs:false,refillRetries:20,naturalCascadeChance:0.00,text:"連鎖開始加成：本關達成 3,400 分即可升級。"},
+ {nextScore:4800,colors:5,bombs:false,refillRetries:18,naturalCascadeChance:0.00,text:"本關達成 4,800 分即可升級。"},
+ {nextScore:6400,colors:6,bombs:false,refillRetries:16,naturalCascadeChance:0.00,text:"增加第 6 色：本關達成 6,400 分即可升級。"},
+ {nextScore:8200,colors:6,bombs:true,bombCount:1,bombStart:20,refillRetries:14,naturalCascadeChance:0.00,text:"炸彈登場：本關達成 8,200 分即可升級。"},
+ {nextScore:10100,colors:6,bombs:true,bombCount:2,bombStart:15,refillRetries:12,naturalCascadeChance:0.00,text:"本關達成 10,100 分即可升級。"},
+ {nextScore:12400,colors:6,bombs:true,bombCount:2,bombStart:12,refillRetries:10,naturalCascadeChance:0.00,text:"本關達成 12,400 分即可升級。"},
+ {nextScore:15100,colors:7,bombs:true,bombCount:3,bombStart:10,refillRetries:9,naturalCascadeChance:0.00,text:"增加第 7 色：本關達成 15,100 分即可升級。"},
+ {nextScore:18200,colors:7,bombs:true,bombCount:3,bombStart:8,refillRetries:8,naturalCascadeChance:0.00,text:"最終關：本關達成 18,200 分完成全部關卡。"}
 ];
 let board=[],selected=null,busy=false,soundOn=true,currentDir=-1,level=1,score=0,levelStartScore=0,history=[],anim=[],vanish=new Set(),gameOver=false,cascadeGuard=0,campaignComplete=false;
+const MAX_EXTRA_CASCADES=1;
 try{
- const savedLevel=Number(localStorage.getItem("hexic_v68_level")||1);
- const savedScore=Number(localStorage.getItem("hexic_v68_score")||0);
+ const savedLevel=Number(localStorage.getItem("hexic_v71_level")||1);
+ const savedScore=Number(localStorage.getItem("hexic_v71_score")||0);
  if(Number.isFinite(savedLevel))level=Math.max(1,Math.min(LEVELS.length,savedLevel));
  if(Number.isFinite(savedScore))score=Math.max(0,Math.floor(savedScore));
 }catch(e){}
 const $=id=>document.getElementById(id),AC=window.AudioContext||window.webkitAudioContext;let ac;
 function beep(f=520,d=.06){if(!soundOn)return;try{ac=ac||new AC();if(ac.state==="suspended")ac.resume();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.03;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d)}catch(e){}}
 function cfg(){return LEVELS[level-1]}function rnd(){return Math.floor(Math.random()*cfg().colors)}
-function saveProgress(){try{localStorage.setItem("hexic_v68_level",String(level));localStorage.setItem("hexic_v68_score",String(score))}catch(e){}}
+function saveProgress(){try{localStorage.setItem("hexic_v71_level",String(level));localStorage.setItem("hexic_v71_score",String(score))}catch(e){}}
 function matchScore(size){if(size<=3)return 100;if(size===4)return 180;if(size===5)return 300;return 450+(size-6)*150}
 function cascadeMultiplier(wave){return[1,1.5,2,2.5][Math.min(3,Math.max(0,wave))]}
 function bombBonusFrom(set){let n=0;for(const key of set){const[r,c]=key.split(",").map(Number);if(board[r]?.[c]?.bomb!=null)n++}return n*500}
@@ -37,7 +38,7 @@ function starPath(x,y,r1,r2){ctx.beginPath();for(let i=0;i<10;i++){const a=-Math
 function drawTile(x,y,t,alpha=1,scale=1){if(!t)return;const g=geom();ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.scale(scale,scale);ctx.translate(-x,-y);
  if(t.type==="pearl"){ctx.shadowColor="#000";ctx.shadowBlur=10;const gr=ctx.createRadialGradient(x-g.s*.25,y-g.s*.3,3,x,y,g.s);gr.addColorStop(0,"#79808f");gr.addColorStop(.3,"#252936");gr.addColorStop(1,"#05060a");hex(x,y,g.s,.91);ctx.fillStyle=gr;ctx.fill();ctx.lineWidth=5;ctx.strokeStyle="#eaf5ff";ctx.stroke();ctx.beginPath();ctx.arc(x-g.s*.18,y-g.s*.22,7,0,Math.PI*2);ctx.fillStyle="#ffffff99";ctx.fill();}
  else{const col=COLORS[t.color];ctx.shadowColor="#5682a7";ctx.shadowBlur=5;ctx.shadowOffsetY=3;const gr=ctx.createLinearGradient(x-g.s,y-g.s,x+g.s,y+g.s);gr.addColorStop(0,shade(col,72));gr.addColorStop(.23,shade(col,27));gr.addColorStop(.6,col);gr.addColorStop(1,shade(col,-52));hex(x,y,g.s,.91);ctx.fillStyle=gr;ctx.fill();ctx.shadowColor="transparent";ctx.lineWidth=6;ctx.strokeStyle="#f8fdff";ctx.stroke();hex(x,y,g.s,.73);ctx.lineWidth=2;ctx.strokeStyle=shade(col,-55);ctx.stroke();ctx.beginPath();ctx.moveTo(x-g.s*.42,y-g.s*.14);ctx.lineTo(x-g.s*.08,y-g.s*.44);ctx.lineTo(x+g.s*.28,y-g.s*.3);ctx.strokeStyle="#fff";ctx.lineWidth=5;ctx.lineCap="round";ctx.stroke();if(t.type==="star"){starPath(x,y,17,8);ctx.fillStyle="#fff7a5";ctx.strokeStyle="#d89500";ctx.lineWidth=2;ctx.fill();ctx.stroke();}}
- if(t.bomb!=null){ctx.beginPath();ctx.arc(x,y,17,0,Math.PI*2);ctx.fillStyle="#19223d";ctx.fill();ctx.lineWidth=2;ctx.strokeStyle="#fff";ctx.stroke();ctx.fillStyle="#fff";ctx.font="bold 18px Tahoma";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(t.bomb,x,y+1)}ctx.restore()}
+ if(t.bomb!=null){ctx.save();const urgent=t.bomb<=5;const danger=t.bomb<=3;const pulse=urgent?(0.86+0.14*Math.sin(Date.now()/115)):1;ctx.translate(x,y);ctx.scale(pulse,pulse);ctx.translate(-x,-y);if(urgent){ctx.beginPath();ctx.arc(x,y+2,22,0,Math.PI*2);ctx.fillStyle=danger?"#ff2f2f22":"#ffd84a1f";ctx.fill();}const body=ctx.createRadialGradient(x-6,y-8,3,x,y+3,20);body.addColorStop(0,"#7f8793");body.addColorStop(.16,"#313846");body.addColorStop(.58,"#10151d");body.addColorStop(1,"#000000");ctx.beginPath();ctx.arc(x,y+3,16.8,0,Math.PI*2);ctx.fillStyle=body;ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle="#d9e1eb";ctx.stroke();ctx.beginPath();ctx.arc(x-5,y-3,5.2,0,Math.PI*2);ctx.fillStyle="#ffffff50";ctx.fill();const cap=ctx.createLinearGradient(x-8,y-15,x+8,y-7);cap.addColorStop(0,"#e7edf5");cap.addColorStop(.5,"#95a1af");cap.addColorStop(1,"#eef3f9");ctx.beginPath();ctx.ellipse(x,y-11,6.5,3.3,0,0,Math.PI*2);ctx.fillStyle=cap;ctx.fill();ctx.strokeStyle="#6f7985";ctx.lineWidth=1.4;ctx.stroke();ctx.beginPath();ctx.moveTo(x,y-13);ctx.quadraticCurveTo(x+4,y-20,x+10,y-25);ctx.quadraticCurveTo(x+16,y-30,x+21,y-32);ctx.strokeStyle="#d2b16d";ctx.lineWidth=3.6;ctx.lineCap="round";ctx.stroke();ctx.beginPath();ctx.arc(x+22,y-33,4.3,0,Math.PI*2);ctx.fillStyle=danger?"#ffef8d":urgent?"#ffd54a":"#ffb218";ctx.fill();for(const [dx,dy] of [[0,-8],[8,-1],[5,6],[-6,4],[-5,-4]]){ctx.beginPath();ctx.moveTo(x+22,y-33);ctx.lineTo(x+22+dx,y-33+dy);ctx.strokeStyle=danger?"#ff3b2f":"#ff781f";ctx.lineWidth=2;ctx.stroke();}ctx.fillStyle=urgent?"#ffe78c":"#ffffff";ctx.font="bold 18px Tahoma";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(t.bomb,x,y+4);ctx.restore()}ctx.restore()}
 function draw(){ctx.clearRect(0,0,720,720);for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const k=`${r},${c}`;if(board[r][c]&&!vanish.has(k)){const p=center(r,c);drawTile(p.x,p.y,board[r][c])}}anim.forEach(p=>drawTile(p.x,p.y,p.t,p.alpha??1,p.scale??1));if(selected&&!busy){const ps=selected.map(v=>center(...v)),x=ps.reduce((s,p)=>s+p.x,0)/3,y=ps.reduce((s,p)=>s+p.y,0)/3;ctx.save();ctx.fillStyle="#fff";ctx.shadowColor="#3154ad";ctx.shadowBlur=13;ctx.beginPath();ctx.arc(x,y,18,0,Math.PI*2);ctx.fill();ctx.fillStyle="#f5d23d";starPath(x,y,16,8);ctx.fill();ctx.restore()}}
 function valid(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS}function neigh(r,c){const d=c%2?[[-1,0],[-1,1],[0,1],[1,0],[0,-1],[-1,-1]]:[[-1,0],[0,1],[1,1],[1,0],[1,-1],[0,-1]];return d.map(([dr,dc])=>[r+dr,c+dc])}
 function pick(mx,my){let nearest=[0,0],bd=Infinity;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const p=center(r,c),d=(p.x-mx)**2+(p.y-my)**2;if(d<bd){bd=d;nearest=[r,c]}}const [r,c]=nearest,n=neigh(r,c),opts=[];for(let i=0;i<6;i++){const t=[[r,c],n[i],n[(i+1)%6]];if(t.every(v=>valid(...v)))opts.push(t)}return opts.sort((a,b)=>{const pa=a.map(v=>center(...v)),pb=b.map(v=>center(...v)),ax=pa.reduce((s,p)=>s+p.x,0)/3,ay=pa.reduce((s,p)=>s+p.y,0)/3,bx=pb.reduce((s,p)=>s+p.x,0)/3,by=pb.reduce((s,p)=>s+p.y,0)/3;return((ax-mx)**2+(ay-my)**2)-((bx-mx)**2+(by-my)**2)})[0]||null}
@@ -62,32 +63,43 @@ function localClusterSize(r,c){
 function findFlower(type){for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const centerTile=board[r][c],ring=neigh(r,c);if(!centerTile||!ring.every(v=>valid(...v)))continue;const ts=ring.map(([rr,cc])=>board[rr][cc]);if(type==="normal"&&ts.every(Boolean)&&ts.every(t=>t.type==="normal"&&t.color===ts[0].color))return{r,c,ring,newType:"star",color:centerTile.color};if(type==="star"&&ts.every(Boolean)&&ts.every(t=>t.type==="star"))return{r,c,ring,newType:"pearl",color:0}}return null}
 function tween(ms,fn){return new Promise(res=>{const st=performance.now();function f(now){const t=Math.min(1,(now-st)/ms);fn(1-Math.pow(1-t,3));draw();t<1?requestAnimationFrame(f):res()}requestAnimationFrame(f)})}
 function ui(){const c=cfg();$("level").textContent=level;$("score").textContent=score.toLocaleString();$("goal").textContent=campaignComplete?"MAX":c.nextScore.toLocaleString();$("goalName").textContent="Next Level";$("levelText").textContent=c.text;$("introTitle").textContent=`LEVEL ${level}`}
-function decrementBombs(){let dead=false;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=board[r][c];if(t&&t.bomb!=null){t.bomb--;if(t.bomb<=0)dead=true}}if(dead){gameOver=true;$("overLayer").classList.remove("hidden")}}
-async function rotate(dir){if(!selected||busy||gameOver)return;history.push({b:cloneBoard(),score});if(history.length>12)history.shift();busy=true;decrementBombs();if(gameOver){busy=false;return}const tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v)),cx=pts.reduce((sum,p)=>sum+p.x,0)/3,cy=pts.reduce((sum,p)=>sum+p.y,0)/3,target=dir>0?[2,0,1]:[1,2,0];tri.forEach(([r,c])=>board[r][c]=null);anim=vals.map((t,i)=>({t,x:pts[i].x,y:pts[i].y}));beep(dir>0?590:440);await tween(170,t=>{const a=(dir>0?1:-1)*Math.PI*2/3*t;anim.forEach((p,i)=>{const ox=pts[i].x-cx,oy=pts[i].y-cy;p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a)})});tri.forEach(([r,c],i)=>board[r][c]=vals[target[i]]);anim=[];draw();await resolveBoard();busy=false}
+function decrementBombs(){let dead=false,lowest=999,hasBomb=false;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=board[r][c];if(t&&t.bomb!=null){hasBomb=true;t.bomb--;lowest=Math.min(lowest,t.bomb);if(t.bomb<=0)dead=true}}if(dead){beep(150,.25);beep(120,.25);gameOver=true;$("overLayer").classList.remove("hidden");return}if(hasBomb&&lowest<=5){beep(lowest<=3?880:700,.08)}}
+async function rotate(dir){if(!selected||busy||gameOver)return;history.push({b:cloneBoard(),score});if(history.length>12)history.shift();busy=true;const turnLevel=level,tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v)),cx=pts.reduce((sum,p)=>sum+p.x,0)/3,cy=pts.reduce((sum,p)=>sum+p.y,0)/3,target=dir>0?[2,0,1]:[1,2,0];tri.forEach(([r,c])=>board[r][c]=null);anim=vals.map((t,i)=>({t,x:pts[i].x,y:pts[i].y}));beep(dir>0?590:440);await tween(170,t=>{const a=(dir>0?1:-1)*Math.PI*2/3*t;anim.forEach((p,i)=>{const ox=pts[i].x-cx,oy=pts[i].y-cy;p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a)})});tri.forEach(([r,c],i)=>board[r][c]=vals[target[i]]);anim=[];draw();await resolveBoard();if(!gameOver&&!campaignComplete&&level===turnLevel){decrementBombs();draw();}busy=false}
 async function resolveBoard(){
  cascadeGuard=0;
  let wave=0;
+ let resolvedOnce=false;
+ let extraCascades=0;
 
- // 保留 v6.7 的穩定機制：持續處理到棋盤穩定，補珠 AI 仍會降低過長連鎖。
+ // 6.9：只允許「初次消除 + 最多 1 次自然連鎖」，避免自動連鎖過長。
  while(cascadeGuard<40){
   cascadeGuard++;
 
   const pearlFlower=findFlower("star");
+  const normalFlower=findFlower("normal");
+  const gs=clusters();
+  const hasAction=!!pearlFlower||!!normalFlower||gs.length>0;
+
+  if(!hasAction)break;
+
+  if(resolvedOnce&&extraCascades>=MAX_EXTRA_CASCADES){
+   stabilizeInitialBoard();
+   break;
+  }
+
   if(pearlFlower){
    await createSpecial(pearlFlower,10000);
+   if(resolvedOnce)extraCascades++; else resolvedOnce=true;
    wave++;
    continue;
   }
 
-  const normalFlower=findFlower("normal");
   if(normalFlower){
    await createSpecial(normalFlower,3000);
+   if(resolvedOnce)extraCascades++; else resolvedOnce=true;
    wave++;
    continue;
   }
-
-  const gs=clusters();
-  if(!gs.length)break;
 
   const remove=new Set();
   let basePoints=0;
@@ -100,6 +112,7 @@ async function resolveBoard(){
   saveProgress();
   await removeAndDrop(remove);
   maybeSpawnBomb();
+  if(resolvedOnce)extraCascades++; else resolvedOnce=true;
   wave++;
  }
 
@@ -238,7 +251,7 @@ async function gravity(){
  await new Promise(r=>setTimeout(r,70));
 }
 function showToast(text,ms=900){$("toast").textContent=text;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),ms)}
-async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;levelStartScore=score;saveProgress();startLevel(true)}else{campaignComplete=true;saveProgress();ui();showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
+async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;score=0;levelStartScore=0;campaignComplete=false;saveProgress();startLevel(true)}else{campaignComplete=true;saveProgress();ui();showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
 function hasImmediate(){return clusters().length||findFlower("normal")||findFlower("star")}
 function stabilizeInitialBoard(){
  for(let pass=0;pass<300;pass++){
@@ -283,6 +296,7 @@ function generateBoard(){for(let attempt=0;attempt<80;attempt++){board=Array.fro
 }
 function startLevel(showIntro=true){
  selected=null;busy=false;gameOver=false;history=[];anim=[];vanish.clear();
+ campaignComplete=level===LEVELS.length&&score>=cfg().nextScore;
  $("overLayer").classList.add("hidden");
  $("menuLayer").classList.add("hidden");
  $("introLayer").classList.add("hidden");
@@ -318,7 +332,7 @@ $("menuBtn").onclick=()=>{
 $("startBtn").onclick=()=>$("introLayer").classList.add("hidden");
 $("continueBtn").onclick=()=>$("menuLayer").classList.add("hidden");
 $("restartBtn").onclick=()=>{
- score=levelStartScore;saveProgress();
+ score=0;levelStartScore=0;saveProgress();
  $("menuLayer").classList.add("hidden");
  startLevel(false);
  showToast("本關已重新開始",700);
@@ -328,9 +342,9 @@ $("soundBtn").onclick=e=>{
  e.target.textContent=soundOn?"音效：開啟":"音效：關閉";
 };
 $("retryBtn").onclick=()=>{
- score=levelStartScore;saveProgress();
+ score=0;levelStartScore=0;saveProgress();
  startLevel(false);
 };
-levelStartScore=score;
+levelStartScore=0;
 startLevel(true);
 })();
