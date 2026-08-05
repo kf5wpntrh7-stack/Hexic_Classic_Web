@@ -2,16 +2,16 @@
 const cv=document.getElementById("game"),ctx=cv.getContext("2d"),ROWS=9,COLS=9;
 const COLORS=["#ef665f","#f2a53b","#63df55","#8d49bd","#2855df","#54c3e7","#f0d532"];
 const LEVELS=[
- {kind:"combo",target:10,colors:4,bombs:false,maxCascade:1,cascadeChance:0.02,text:"4 色教學關：完成 10 次主動消除。"},
- {kind:"combo",target:15,colors:5,bombs:false,maxCascade:2,cascadeChance:0.05,text:"增加第 5 色：完成 15 次主動消除。"},
- {kind:"combo",target:20,colors:5,bombs:false,maxCascade:3,cascadeChance:0.10,text:"連鎖教學：完成 20 次主動消除，自然連鎖只加分。"},
- {kind:"star",target:1,colors:5,bombs:false,maxCascade:2,cascadeChance:0.06,text:"製造 1 顆 Starflower：讓 6 顆同色寶石圍住中央。"},
- {kind:"combo",target:25,colors:6,bombs:false,maxCascade:2,cascadeChance:0.08,text:"增加第 6 色：完成 25 次主動消除。"},
- {kind:"star",target:2,colors:6,bombs:true,bombCount:1,bombStart:20,maxCascade:2,cascadeChance:0.08,text:"炸彈登場：製造 2 顆 Starflower；炸彈初始倒數 20。"},
- {kind:"combo",target:30,colors:6,bombs:true,bombCount:2,bombStart:14,maxCascade:3,cascadeChance:0.10,text:"完成 30 次主動消除，注意 2 顆炸彈。"},
- {kind:"pearl",target:1,colors:6,bombs:true,bombCount:2,bombStart:12,maxCascade:2,cascadeChance:0.08,text:"製造 1 顆 Black Pearl。"},
- {kind:"combo",target:35,colors:7,bombs:true,bombCount:3,bombStart:10,maxCascade:3,cascadeChance:0.10,text:"增加第 7 色：完成 35 次主動消除。"},
- {kind:"pearlmatch",target:1,colors:7,bombs:true,bombCount:3,bombStart:9,maxCascade:3,cascadeChance:0.10,text:"讓 3 顆 Black Pearl 相連並消除。"}
+ {kind:"combo",target:10,colors:4,bombs:false,refillRetries:24,naturalCascadeChance:0.00,text:"4 色教學關：完成 10 次主動消除。"},
+ {kind:"combo",target:15,colors:5,bombs:false,refillRetries:20,naturalCascadeChance:0.01,text:"增加第 5 色：完成 15 次主動消除。"},
+ {kind:"combo",target:20,colors:5,bombs:false,refillRetries:16,naturalCascadeChance:0.02,text:"連鎖教學：完成 20 次主動消除。"},
+ {kind:"star",target:1,colors:5,bombs:false,refillRetries:14,naturalCascadeChance:0.03,text:"製造 1 顆 Starflower。"},
+ {kind:"combo",target:25,colors:6,bombs:false,refillRetries:12,naturalCascadeChance:0.03,text:"增加第 6 色：完成 25 次主動消除。"},
+ {kind:"star",target:2,colors:6,bombs:true,bombCount:1,bombStart:20,refillRetries:10,naturalCascadeChance:0.04,text:"炸彈登場：製造 2 顆 Starflower。"},
+ {kind:"combo",target:30,colors:6,bombs:true,bombCount:2,bombStart:14,refillRetries:9,naturalCascadeChance:0.05,text:"完成 30 次主動消除。"},
+ {kind:"pearl",target:1,colors:6,bombs:true,bombCount:2,bombStart:12,refillRetries:8,naturalCascadeChance:0.05,text:"製造 1 顆 Black Pearl。"},
+ {kind:"combo",target:35,colors:7,bombs:true,bombCount:3,bombStart:10,refillRetries:7,naturalCascadeChance:0.06,text:"增加第 7 色：完成 35 次主動消除。"},
+ {kind:"pearlmatch",target:1,colors:7,bombs:true,bombCount:3,bombStart:9,refillRetries:6,naturalCascadeChance:0.06,text:"讓 3 顆 Black Pearl 相連並消除。"}
 ];
 let board=[],selected=null,busy=false,soundOn=true,currentDir=-1,level=1,score=0,levelStartScore=0,remaining=8,history=[],anim=[],vanish=new Set(),gameOver=false,cascadeGuard=0;
 try{
@@ -138,36 +138,47 @@ function maybeSpawnBomb(){
  showToast("BOMB!",550);
 }
 function safeSpawnTile(r,c){
- // New top gems are random, but we strongly prefer colors that do not
- // immediately create a match. This keeps long cascades rare, not impossible.
- const safeColors=[];
- const neutralColors=[];
+ const retries=cfg().refillRetries||12;
+ const allowNatural=Math.random()<(cfg().naturalCascadeChance||0);
+ const candidates=[];
 
  for(let color=0;color<cfg().colors;color++){
   board[r][c]=tile("normal",color,null);
   const groupSize=localClusterSize(r,c);
   const makesFlower=!!findFlower("normal");
+  const immediateGroups=clusters().filter(g=>
+   g.type==="normal" && g.cells.some(v=>v[0]===r&&v[1]===c)
+  ).length;
 
-  if(groupSize<3&&!makesFlower){
-   safeColors.push(color);
-  }else if(groupSize===3&&!makesFlower){
-   neutralColors.push(color);
-  }
+  let penalty=0;
+  if(groupSize>=3)penalty+=100;
+  if(makesFlower)penalty+=200;
+  penalty+=immediateGroups*80;
+  candidates.push({color,penalty});
  }
 
  board[r][c]=null;
+ candidates.sort((a,b)=>a.penalty-b.penalty);
+ const safe=candidates.filter(x=>x.penalty===0);
 
- // About 6% chance to allow a natural cascade when a plausible color exists.
- if(Math.random()<0.06 && neutralColors.length){
-  return tile("normal",neutralColors[Math.floor(Math.random()*neutralColors.length)],null);
+ if(safe.length&&!allowNatural){
+  return tile("normal",safe[Math.floor(Math.random()*safe.length)].color,null);
  }
 
- if(safeColors.length){
-  return tile("normal",safeColors[Math.floor(Math.random()*safeColors.length)],null);
+ const lowRisk=candidates.filter(x=>x.penalty<=100);
+ if(allowNatural&&lowRisk.length){
+  return tile("normal",lowRisk[Math.floor(Math.random()*lowRisk.length)].color,null);
  }
 
- // Fallback when no safe color exists.
- return tile("normal",rnd(),null);
+ for(let i=0;i<retries;i++){
+  const color=rnd();
+  board[r][c]=tile("normal",color,null);
+  const safeNow=localClusterSize(r,c)<3&&!findFlower("normal");
+  board[r][c]=null;
+  if(safeNow)return tile("normal",color,null);
+ }
+
+ return tile("normal",candidates[0].color,null);
 }
 async function gravity(){
  const oldBoard=cloneBoard();
@@ -243,36 +254,38 @@ function showToast(text,ms=900){$("toast").textContent=text;$("toast").classList
 async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;try{localStorage.setItem("hexic_v6_level",String(level))}catch(e){}levelStartScore=score;startLevel(true)}else{showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
 function hasImmediate(){return clusters().length||findFlower("normal")||findFlower("star")}
 function stabilizeInitialBoard(){
- for(let pass=0;pass<200;pass++){
-  const gs=clusters();
+ for(let pass=0;pass<300;pass++){
+  const gs=clusters().filter(g=>g.type==="normal");
   const nf=findFlower("normal");
-  const sf=findFlower("star");
-
-  if(!gs.length&&!nf&&!sf)return;
+  if(!gs.length&&!nf)return;
 
   const bad=new Set();
-  for(const g of gs){
-   if(g.type==="normal")g.cells.forEach(v=>bad.add(v.join(",")));
-  }
+  for(const g of gs)g.cells.forEach(v=>bad.add(v.join(",")));
   if(nf)nf.ring.forEach(v=>bad.add(v.join(",")));
-  if(sf)sf.ring.forEach(v=>bad.add(v.join(",")));
-
-  if(!bad.size)return;
 
   for(const key of bad){
    const [r,c]=key.split(",").map(Number);
    if(!board[r][c]||board[r][c].type!=="normal")continue;
 
    let placed=false;
-   for(let tries=0;tries<30;tries++){
-    board[r][c]=tile("normal",rnd(),null);
+   for(let tries=0;tries<40;tries++){
+    const color=Math.floor(Math.random()*cfg().colors);
+    board[r][c]=tile("normal",color,null);
     if(localClusterSize(r,c)<3&&!findFlower("normal")){
      placed=true;
      break;
     }
    }
+
    if(!placed){
-    board[r][c]=tile("normal",rnd(),null);
+    const options=[];
+    for(let color=0;color<cfg().colors;color++){
+     board[r][c]=tile("normal",color,null);
+     const penalty=(localClusterSize(r,c)>=3?100:0)+(findFlower("normal")?200:0);
+     options.push({color,penalty});
+    }
+    options.sort((a,b)=>a.penalty-b.penalty);
+    board[r][c]=tile("normal",options[0].color,null);
    }
   }
  }
