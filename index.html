@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#9bd7f5">
-<title>Hexic Classic Remake v6.7 Refill AI</title>
+<title>Hexic Classic Remake v6.8 Score Level</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app"><div class="frame">
-<header class="top"><div class="stat"><span>Level</span><b id="level">1</b></div><div class="stat"><span>Score</span><b id="score">0</b></div><div class="stat"><span id="goalName">Combos To Go</span><b id="goal">8</b></div></header>
+<header class="top"><div class="stat"><span>Level</span><b id="level">1</b></div><div class="stat"><span>Score</span><b id="score">0</b></div><div class="stat"><span id="goalName">Next Level</span><b id="goal">1,000</b></div></header>
 <section class="field">
 <canvas id="game" width="720" height="720"></canvas><div id="toast" class="toast hidden"></div>
 <div id="introLayer" class="overlay hidden"><div class="panel">
@@ -18,7 +18,7 @@
   <button id="startBtn">開始本關</button>
 </div></div>
 <div id="menuLayer" class="overlay hidden"><div class="panel">
-  <h2>暫停</h2><p style="font-size:14px;margin:0 0 8px">自然連鎖只會加分；只有你旋轉造成的第一波消除才會計入關卡目標。</p>
+  <h2>暫停</h2><p style="font-size:14px;margin:0 0 8px">每次消除都會計分；分數達到 Next Level 門檻後自動升級。</p>
   <button id="continueBtn">繼續遊戲</button>
   <button id="undoMenuBtn">復原一步</button>
   <button id="restartBtn">重新開始本關</button>

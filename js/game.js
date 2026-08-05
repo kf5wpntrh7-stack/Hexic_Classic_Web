@@ -2,25 +2,32 @@
 const cv=document.getElementById("game"),ctx=cv.getContext("2d"),ROWS=9,COLS=9;
 const COLORS=["#ef665f","#f2a53b","#63df55","#8d49bd","#2855df","#54c3e7","#f0d532"];
 const LEVELS=[
- {kind:"combo",target:10,colors:4,bombs:false,refillRetries:24,naturalCascadeChance:0.00,text:"4 色教學關：完成 10 次主動消除。"},
- {kind:"combo",target:15,colors:5,bombs:false,refillRetries:20,naturalCascadeChance:0.01,text:"增加第 5 色：完成 15 次主動消除。"},
- {kind:"combo",target:20,colors:5,bombs:false,refillRetries:16,naturalCascadeChance:0.02,text:"連鎖教學：完成 20 次主動消除。"},
- {kind:"star",target:1,colors:5,bombs:false,refillRetries:14,naturalCascadeChance:0.03,text:"製造 1 顆 Starflower。"},
- {kind:"combo",target:25,colors:6,bombs:false,refillRetries:12,naturalCascadeChance:0.03,text:"增加第 6 色：完成 25 次主動消除。"},
- {kind:"star",target:2,colors:6,bombs:true,bombCount:1,bombStart:20,refillRetries:10,naturalCascadeChance:0.04,text:"炸彈登場：製造 2 顆 Starflower。"},
- {kind:"combo",target:30,colors:6,bombs:true,bombCount:2,bombStart:14,refillRetries:9,naturalCascadeChance:0.05,text:"完成 30 次主動消除。"},
- {kind:"pearl",target:1,colors:6,bombs:true,bombCount:2,bombStart:12,refillRetries:8,naturalCascadeChance:0.05,text:"製造 1 顆 Black Pearl。"},
- {kind:"combo",target:35,colors:7,bombs:true,bombCount:3,bombStart:10,refillRetries:7,naturalCascadeChance:0.06,text:"增加第 7 色：完成 35 次主動消除。"},
- {kind:"pearlmatch",target:1,colors:7,bombs:true,bombCount:3,bombStart:9,refillRetries:6,naturalCascadeChance:0.06,text:"讓 3 顆 Black Pearl 相連並消除。"}
+ {nextScore:1000,colors:4,bombs:false,refillRetries:24,naturalCascadeChance:0.00,text:"4 色教學關：累積 1,000 分自動升級。"},
+ {nextScore:3000,colors:5,bombs:false,refillRetries:20,naturalCascadeChance:0.01,text:"增加第 5 色：累積 3,000 分自動升級。"},
+ {nextScore:6000,colors:5,bombs:false,refillRetries:16,naturalCascadeChance:0.02,text:"連鎖開始加成：累積 6,000 分自動升級。"},
+ {nextScore:10000,colors:5,bombs:false,refillRetries:14,naturalCascadeChance:0.03,text:"累積 10,000 分自動升級。"},
+ {nextScore:15000,colors:6,bombs:false,refillRetries:12,naturalCascadeChance:0.03,text:"增加第 6 色：累積 15,000 分自動升級。"},
+ {nextScore:22000,colors:6,bombs:true,bombCount:1,bombStart:20,refillRetries:10,naturalCascadeChance:0.04,text:"炸彈登場：累積 22,000 分自動升級。"},
+ {nextScore:30000,colors:6,bombs:true,bombCount:2,bombStart:14,refillRetries:9,naturalCascadeChance:0.05,text:"累積 30,000 分自動升級。"},
+ {nextScore:40000,colors:6,bombs:true,bombCount:2,bombStart:12,refillRetries:8,naturalCascadeChance:0.05,text:"累積 40,000 分自動升級。"},
+ {nextScore:55000,colors:7,bombs:true,bombCount:3,bombStart:10,refillRetries:7,naturalCascadeChance:0.06,text:"增加第 7 色：累積 55,000 分自動升級。"},
+ {nextScore:75000,colors:7,bombs:true,bombCount:3,bombStart:9,refillRetries:6,naturalCascadeChance:0.06,text:"最終關：累積 75,000 分完成全部關卡。"}
 ];
-let board=[],selected=null,busy=false,soundOn=true,currentDir=-1,level=1,score=0,levelStartScore=0,remaining=8,history=[],anim=[],vanish=new Set(),gameOver=false,cascadeGuard=0;
+let board=[],selected=null,busy=false,soundOn=true,currentDir=-1,level=1,score=0,levelStartScore=0,history=[],anim=[],vanish=new Set(),gameOver=false,cascadeGuard=0,campaignComplete=false;
 try{
- const saved=Number(localStorage.getItem("hexic_v6_level")||1);
- if(Number.isFinite(saved))level=Math.max(1,Math.min(LEVELS.length,saved));
+ const savedLevel=Number(localStorage.getItem("hexic_v68_level")||1);
+ const savedScore=Number(localStorage.getItem("hexic_v68_score")||0);
+ if(Number.isFinite(savedLevel))level=Math.max(1,Math.min(LEVELS.length,savedLevel));
+ if(Number.isFinite(savedScore))score=Math.max(0,Math.floor(savedScore));
 }catch(e){}
 const $=id=>document.getElementById(id),AC=window.AudioContext||window.webkitAudioContext;let ac;
 function beep(f=520,d=.06){if(!soundOn)return;try{ac=ac||new AC();if(ac.state==="suspended")ac.resume();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.03;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d)}catch(e){}}
 function cfg(){return LEVELS[level-1]}function rnd(){return Math.floor(Math.random()*cfg().colors)}
+function saveProgress(){try{localStorage.setItem("hexic_v68_level",String(level));localStorage.setItem("hexic_v68_score",String(score))}catch(e){}}
+function matchScore(size){if(size<=3)return 100;if(size===4)return 180;if(size===5)return 300;return 450+(size-6)*150}
+function cascadeMultiplier(wave){return[1,1.5,2,2.5][Math.min(3,Math.max(0,wave))]}
+function bombBonusFrom(set){let n=0;for(const key of set){const[r,c]=key.split(",").map(Number);if(board[r]?.[c]?.bomb!=null)n++}return n*500}
+campaignComplete=level===LEVELS.length&&score>=cfg().nextScore;
 function tile(type="normal",color=rnd(),bomb=null){return{type,color,bomb}}function cloneBoard(){return board.map(r=>r.map(t=>t?{...t}:null))}
 function geom(){const s=39,dx=1.5*s,dy=Math.sqrt(3)*s,w=dx*(COLS-1)+2*s,h=dy*(ROWS+.5);return{s,dx,dy,ox:(720-w)/2+s,oy:(720-h)/2+s}}
 function center(r,c){const g=geom();return{x:g.ox+c*g.dx,y:g.oy+r*g.dy+(c%2)*g.dy/2}}
@@ -54,72 +61,52 @@ function localClusterSize(r,c){
 }
 function findFlower(type){for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const centerTile=board[r][c],ring=neigh(r,c);if(!centerTile||!ring.every(v=>valid(...v)))continue;const ts=ring.map(([rr,cc])=>board[rr][cc]);if(type==="normal"&&ts.every(Boolean)&&ts.every(t=>t.type==="normal"&&t.color===ts[0].color))return{r,c,ring,newType:"star",color:centerTile.color};if(type==="star"&&ts.every(Boolean)&&ts.every(t=>t.type==="star"))return{r,c,ring,newType:"pearl",color:0}}return null}
 function tween(ms,fn){return new Promise(res=>{const st=performance.now();function f(now){const t=Math.min(1,(now-st)/ms);fn(1-Math.pow(1-t,3));draw();t<1?requestAnimationFrame(f):res()}requestAnimationFrame(f)})}
-function ui(){const c=cfg();$("level").textContent=level;$("score").textContent=score.toLocaleString();$("goal").textContent=Math.max(0,remaining);$("goalName").textContent=c.kind==="combo"?"Combos To Go":c.kind==="star"?"Stars To Go":c.kind==="pearl"?"Pearls To Go":"Pearl Match";$("levelText").textContent=c.text;$("introTitle").textContent=`LEVEL ${level}`}
+function ui(){const c=cfg();$("level").textContent=level;$("score").textContent=score.toLocaleString();$("goal").textContent=campaignComplete?"MAX":c.nextScore.toLocaleString();$("goalName").textContent="Next Level";$("levelText").textContent=c.text;$("introTitle").textContent=`LEVEL ${level}`}
 function decrementBombs(){let dead=false;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=board[r][c];if(t&&t.bomb!=null){t.bomb--;if(t.bomb<=0)dead=true}}if(dead){gameOver=true;$("overLayer").classList.remove("hidden")}}
-async function rotate(dir){if(!selected||busy||gameOver)return;history.push({b:cloneBoard(),score,remaining});if(history.length>12)history.shift();busy=true;decrementBombs();if(gameOver){busy=false;return}const tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v)),cx=pts.reduce((s,p)=>s+p.x,0)/3,cy=pts.reduce((s,p)=>s+p.y,0)/3,target=dir>0?[2,0,1]:[1,2,0];tri.forEach(([r,c])=>board[r][c]=null);anim=vals.map((t,i)=>({t,x:pts[i].x,y:pts[i].y}));beep(dir>0?590:440);await tween(170,t=>{const a=(dir>0?1:-1)*Math.PI*2/3*t;anim.forEach((p,i)=>{const ox=pts[i].x-cx,oy=pts[i].y-cy;p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a)})});tri.forEach(([r,c],i)=>board[r][c]=vals[target[i]]);anim=[];draw();await resolveBoard();busy=false}
-async function resolveBoard(rotatedKeys=new Set()){
+async function rotate(dir){if(!selected||busy||gameOver)return;history.push({b:cloneBoard(),score});if(history.length>12)history.shift();busy=true;decrementBombs();if(gameOver){busy=false;return}const tri=order(selected),vals=tri.map(([r,c])=>board[r][c]),pts=tri.map(v=>center(...v)),cx=pts.reduce((sum,p)=>sum+p.x,0)/3,cy=pts.reduce((sum,p)=>sum+p.y,0)/3,target=dir>0?[2,0,1]:[1,2,0];tri.forEach(([r,c])=>board[r][c]=null);anim=vals.map((t,i)=>({t,x:pts[i].x,y:pts[i].y}));beep(dir>0?590:440);await tween(170,t=>{const a=(dir>0?1:-1)*Math.PI*2/3*t;anim.forEach((p,i)=>{const ox=pts[i].x-cx,oy=pts[i].y-cy;p.x=cx+ox*Math.cos(a)-oy*Math.sin(a);p.y=cy+ox*Math.sin(a)+oy*Math.cos(a)})});tri.forEach(([r,c],i)=>board[r][c]=vals[target[i]]);anim=[];draw();await resolveBoard();busy=false}
+async function resolveBoard(){
  cascadeGuard=0;
- let firstWave=true;
+ let wave=0;
 
- // Original-style behavior: keep resolving until the board is stable.
- // Safety limit only protects against an accidental infinite loop.
+ // 保留 v6.7 的穩定機制：持續處理到棋盤穩定，補珠 AI 仍會降低過長連鎖。
  while(cascadeGuard<40){
   cascadeGuard++;
 
   const pearlFlower=findFlower("star");
   if(pearlFlower){
-   const flowerKeys=new Set(pearlFlower.ring.map(v=>v.join(",")));
-   if(firstWave && rotatedKeys.size && !touchesRotatedArea(flowerKeys,rotatedKeys))break;
-   await createSpecial(pearlFlower,2500);
-   if(cfg().kind==="pearl"&&firstWave)remaining--;
-   firstWave=false;
+   await createSpecial(pearlFlower,10000);
+   wave++;
    continue;
   }
 
   const normalFlower=findFlower("normal");
   if(normalFlower){
-   const flowerKeys=new Set(normalFlower.ring.map(v=>v.join(",")));
-   if(firstWave && rotatedKeys.size && !touchesRotatedArea(flowerKeys,rotatedKeys))break;
-   await createSpecial(normalFlower,1000);
-   if(cfg().kind==="star"&&firstWave)remaining--;
-   firstWave=false;
+   await createSpecial(normalFlower,3000);
+   wave++;
    continue;
   }
 
   const gs=clusters();
   if(!gs.length)break;
 
-  // First wave must be caused by the current rotation.
-  const activeGroups=firstWave && rotatedKeys.size
-   ? gs.filter(g=>touchesRotatedArea(new Set(g.cells.map(v=>v.join(","))),rotatedKeys))
-   : gs;
-
-  if(!activeGroups.length)break;
-
   const remove=new Set();
-  let comboCount=0,pearlMatch=false;
-  for(const g of activeGroups){
+  let basePoints=0;
+  for(const g of gs){
    g.cells.forEach(v=>remove.add(v.join(",")));
-   comboCount++;
-   if(g.type==="pearl")pearlMatch=true;
+   basePoints+=matchScore(g.cells.length);
   }
 
-  score+=remove.size*100*Math.max(1,comboCount)*(firstWave?1:Math.min(6,cascadeGuard));
-
-  // Only the player's first wave advances normal combo goals.
-  if(firstWave&&cfg().kind==="combo")remaining-=1;
-  if(firstWave&&cfg().kind==="pearlmatch"&&pearlMatch)remaining=0;
-
+  score+=Math.round(basePoints*cascadeMultiplier(wave))+bombBonusFrom(remove);
+  saveProgress();
   await removeAndDrop(remove);
   maybeSpawnBomb();
-  firstWave=false;
+  wave++;
  }
 
- // At this point the board should be stable.
  ui();
- if(remaining<=0)await complete();
+ if(!campaignComplete&&score>=cfg().nextScore)await complete();
 }
-async function createSpecial(f,points){vanish=new Set(f.ring.map(v=>v.join(",")));anim=[...vanish].map(k=>{const[r,c]=k.split(",").map(Number),p=center(r,c);return{t:board[r][c],x:p.x,y:p.y,alpha:1,scale:1}});beep(f.newType==="pearl"?880:760,.13);await tween(210,t=>anim.forEach(p=>{p.alpha=1-t;p.scale=1+.28*t}));f.ring.forEach(([r,c])=>board[r][c]=null);board[f.r][f.c]=tile(f.newType,f.color,null);score+=points;anim=[];vanish.clear();await gravity()}
+async function createSpecial(f,points){const ringSet=new Set(f.ring.map(v=>v.join(",")));const bombBonus=bombBonusFrom(ringSet);vanish=ringSet;anim=[...vanish].map(k=>{const[r,c]=k.split(",").map(Number),p=center(r,c);return{t:board[r][c],x:p.x,y:p.y,alpha:1,scale:1}});beep(f.newType==="pearl"?880:760,.13);await tween(210,t=>anim.forEach(p=>{p.alpha=1-t;p.scale=1+.28*t}));f.ring.forEach(([r,c])=>board[r][c]=null);board[f.r][f.c]=tile(f.newType,f.color,null);score+=points+bombBonus;saveProgress();anim=[];vanish.clear();await gravity()}
 async function removeAndDrop(set){vanish=new Set(set);anim=[...set].map(k=>{const[r,c]=k.split(",").map(Number),p=center(r,c);return{t:board[r][c],x:p.x,y:p.y,alpha:1,scale:1}});beep(660,.09);await tween(190,t=>anim.forEach(p=>{p.alpha=1-t;p.scale=1+.25*t}));set.forEach(k=>{const[r,c]=k.split(",").map(Number);board[r][c]=null});anim=[];vanish.clear();await gravity()}
 function maybeSpawnBomb(){
  if(!cfg().bombs)return;
@@ -251,7 +238,7 @@ async function gravity(){
  await new Promise(r=>setTimeout(r,70));
 }
 function showToast(text,ms=900){$("toast").textContent=text;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),ms)}
-async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;try{localStorage.setItem("hexic_v6_level",String(level))}catch(e){}levelStartScore=score;startLevel(true)}else{showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
+async function complete(){busy=true;showToast(`LEVEL ${level} COMPLETE!`,1000);await new Promise(r=>setTimeout(r,1050));if(level<LEVELS.length){level++;levelStartScore=score;saveProgress();startLevel(true)}else{campaignComplete=true;saveProgress();ui();showToast("ALL LEVELS COMPLETE!",1800);busy=false}}
 function hasImmediate(){return clusters().length||findFlower("normal")||findFlower("star")}
 function stabilizeInitialBoard(){
  for(let pass=0;pass<300;pass++){
@@ -295,7 +282,7 @@ function generateBoard(){for(let attempt=0;attempt<80;attempt++){board=Array.fro
  stabilizeInitialBoard();
 }
 function startLevel(showIntro=true){
- remaining=cfg().target;selected=null;busy=false;gameOver=false;history=[];anim=[];vanish.clear();
+ selected=null;busy=false;gameOver=false;history=[];anim=[];vanish.clear();
  $("overLayer").classList.add("hidden");
  $("menuLayer").classList.add("hidden");
  $("introLayer").classList.add("hidden");
@@ -318,7 +305,7 @@ $("rightRotateBtn").onclick=()=>setDirection(1);
 $("undoMenuBtn").onclick=()=>{
  if(busy||!history.length)return;
  const h=history.pop();
- board=h.b;score=h.score;remaining=h.remaining;
+ board=h.b;score=h.score;saveProgress();
  selected=null;gameOver=false;
  $("overLayer").classList.add("hidden");
  $("menuLayer").classList.add("hidden");
@@ -331,7 +318,7 @@ $("menuBtn").onclick=()=>{
 $("startBtn").onclick=()=>$("introLayer").classList.add("hidden");
 $("continueBtn").onclick=()=>$("menuLayer").classList.add("hidden");
 $("restartBtn").onclick=()=>{
- score=levelStartScore;
+ score=levelStartScore;saveProgress();
  $("menuLayer").classList.add("hidden");
  startLevel(false);
  showToast("本關已重新開始",700);
@@ -341,7 +328,7 @@ $("soundBtn").onclick=e=>{
  e.target.textContent=soundOn?"音效：開啟":"音效：關閉";
 };
 $("retryBtn").onclick=()=>{
- score=levelStartScore;
+ score=levelStartScore;saveProgress();
  startLevel(false);
 };
 levelStartScore=score;
